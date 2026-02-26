@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+echo "Running pre-commit checks..."
+
+# Ensure docker is up (cheap check)
+docker compose ps >/dev/null 2>&1 || {
+  echo "Docker compose not available or not running."
+  exit 1
+}
+
+docker compose exec -T app ./vendor/bin/pint
+docker compose exec -T app ./vendor/bin/phpstan analyse -c phpstan.neon
+docker compose exec -T app php artisan test --testsuite=Unit
+
+echo "OK"

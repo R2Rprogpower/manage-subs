@@ -1,0 +1,49 @@
+name: CI (Docker identical)
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Speeds up image build (optional but helps a lot)
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build + start stack
+        working-directory: api
+        run: |
+          docker buildx create --use
+          make ci-up
+
+      - name: Install deps + migrate
+        working-directory: api
+        run: make ci-setup
+
+      - name: Run checks (same as local)
+        working-directory: api
+        run: make ci-check
+
+      - name: Tear down
+        if: always()
+        working-directory: api
+        run: make ci-down

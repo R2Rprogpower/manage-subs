@@ -5,7 +5,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "hooks:install": "lefthook install"
+    "hooks:install": "make install-hooks"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

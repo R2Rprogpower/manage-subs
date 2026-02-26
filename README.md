@@ -61,3 +61,21 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 ## App
 
 What phpstan lvl to choose? 
+
+
+
+## install
+
+git clone https://github.com/R2Rprogpower/guzleaks.git .
+
+cp .env.example .env
+
+docker compose up -d --build
+
+docker compose exec app composer install
+
+docker compose exec app php artisan key:generate
+
+docker compose exec app php artisan migrate
+
+make install-hooks

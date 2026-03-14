@@ -157,7 +157,7 @@ class RoleServiceTest extends TestCase
         $repository = Mockery::mock(RoleRepository::class);
         $auditLogService = Mockery::mock(AuditLogService::class);
 
-        $permission = new Permission();
+        $permission = new Permission;
         $permission->id = 8;
         $permission->name = 'users.view';
 
@@ -189,7 +189,7 @@ class RoleServiceTest extends TestCase
 
     private function makeActor(): User
     {
-        $actor = new User();
+        $actor = new User;
         $actor->id = 1;
         $actor->name = 'Actor';
         $actor->email = 'actor@example.com';
@@ -199,7 +199,7 @@ class RoleServiceTest extends TestCase
 
     private function makeRole(int $id, string $name, string $guardName): Role
     {
-        $role = new Role();
+        $role = new Role;
         $role->id = $id;
         $role->name = $name;
         $role->guard_name = $guardName;

@@ -132,7 +132,7 @@ class PermissionServiceTest extends TestCase
 
     private function makeActor(): User
     {
-        $actor = new User();
+        $actor = new User;
         $actor->id = 1;
         $actor->name = 'Actor';
         $actor->email = 'actor@example.com';
@@ -142,7 +142,7 @@ class PermissionServiceTest extends TestCase
 
     private function makePermission(int $id, string $name, string $guardName): Permission
     {
-        $permission = new Permission();
+        $permission = new Permission;
         $permission->id = $id;
         $permission->name = $name;
         $permission->guard_name = $guardName;

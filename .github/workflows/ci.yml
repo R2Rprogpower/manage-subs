@@ -30,20 +30,16 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Build + start stack
-        working-directory: api
         run: |
           docker buildx create --use
           make ci-up
 
       - name: Install deps + migrate
-        working-directory: api
         run: make ci-setup
 
       - name: Run checks (same as local)
-        working-directory: api
         run: make ci-check
 
       - name: Tear down
         if: always()
-        working-directory: api
         run: make ci-down

@@ -10,4 +10,5 @@ WORKDIR /var/www/html
 
 # non-root user (nice for dev)
 RUN addgroup -g 1000 app && adduser -G app -g app -s /bin/sh -D -u 1000 app
+RUN chown -R app:app /var/www/html
 USER app

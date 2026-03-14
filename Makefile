@@ -18,6 +18,7 @@ fmt:
 	docker compose exec -T app ./vendor/bin/pint
 
 lint:
+	docker compose exec -T -u root app rm -rf /tmp/phpstan
 	docker compose exec -T app ./vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=1G
 
 test:
@@ -35,10 +36,15 @@ ci-down:
 	docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v
 
 ci-setup:
-	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T app composer install --no-interaction --no-progress --prefer-dist
-	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T app cp .env.example .env
-	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T app php artisan key:generate
-	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T app php artisan migrate --force
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app git config --global --add safe.directory /var/www/html
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app composer install --no-interaction --no-progress --prefer-dist
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app cp .env.example .env
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app php artisan key:generate
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app php artisan migrate --force
 
 ci-check:
-	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T app make check
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app ./vendor/bin/pint
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app rm -rf /tmp/phpstan
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app ./vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=1G
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app php artisan test --testsuite=Unit
+	@echo "All CI checks passed."

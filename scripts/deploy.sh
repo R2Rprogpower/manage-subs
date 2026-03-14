@@ -77,6 +77,17 @@ if [[ ! -f "$ENV_SOURCE" ]]; then
   exit 1
 fi
 
+CURRENT_APP_KEY="$(grep -E '^APP_KEY=' "$ENV_SOURCE" | head -n1 | cut -d'=' -f2- || true)"
+if [[ -z "$CURRENT_APP_KEY" ]]; then
+  GENERATED_APP_KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
+  if grep -qE '^APP_KEY=' "$ENV_SOURCE"; then
+    sed -i "s#^APP_KEY=.*#APP_KEY=${GENERATED_APP_KEY}#" "$ENV_SOURCE"
+  else
+    printf '\nAPP_KEY=%s\n' "$GENERATED_APP_KEY" >> "$ENV_SOURCE"
+  fi
+  echo "Generated APP_KEY in $ENV_SOURCE"
+fi
+
 # ─── Determine colors ──────────────────────────────────────────────────────────
 ACTIVE=$(cat "$STATE_FILE" 2>/dev/null || echo "green")   # green = nothing running yet
 if [[ "$ACTIVE" == "blue" ]]; then

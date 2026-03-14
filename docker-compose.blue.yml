@@ -1,7 +1,7 @@
 services:
   nginx:
     ports:
-      - "8081:80"
+      - "${BLUE_HTTP_PORT:-18081}:80"
 
   db:
     ports:

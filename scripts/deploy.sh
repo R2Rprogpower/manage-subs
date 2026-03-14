@@ -22,6 +22,24 @@ BASE_COMPOSE_FILE="docker-compose.deploy.yml"
 APP_UID="$(id -u)"
 APP_GID="$(id -g)"
 TEST_DB_NAME="${DEPLOY_TEST_DB_NAME:-app_deploy_test}"
+LOCK_FILE="$BASE_DIR/.deploy.lock"
+
+if ! command -v flock >/dev/null 2>&1; then
+  echo "ERROR: flock is required (install util-linux package)." >&2
+  exit 1
+fi
+
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  CURRENT_LOCK_HOLDER="$(cat "$LOCK_FILE" 2>/dev/null || true)"
+  if [[ -n "$CURRENT_LOCK_HOLDER" ]]; then
+    echo "ERROR: another deploy is already running (PID: $CURRENT_LOCK_HOLDER)." >&2
+  else
+    echo "ERROR: another deploy is already running." >&2
+  fi
+  exit 1
+fi
+echo "$$" 1>&9
 
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_BIN=(docker compose)

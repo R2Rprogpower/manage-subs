@@ -235,6 +235,7 @@ bash scripts/deploy.sh --env /opt/app/.env
 
 - Manual (always available): run the command above on VPS after pushing to `main`.
 - Automatic: `.github/workflows/deploy.yml` runs on every push to `main` and triggers the same VPS deploy script.
+- Parallel deploy protection: `scripts/deploy.sh` uses a lock file (`/opt/app/.deploy.lock`) and fails fast if another deploy is in progress.
 
 Required GitHub Secrets for auto-deploy:
 

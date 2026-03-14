@@ -17,6 +17,8 @@ PORT_GREEN="${GREEN_HTTP_PORT:-18082}"
 HEALTH_TIMEOUT=60     # seconds to wait for new stack to become healthy
 CADDY_FILE="/etc/caddy/Caddyfile"
 BASE_COMPOSE_FILE="docker-compose.deploy.yml"
+APP_UID="$(id -u)"
+APP_GID="$(id -g)"
 
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_BIN=(docker compose)
@@ -113,7 +115,7 @@ if [[ ! -f "$BASE_COMPOSE_FILE" ]]; then
   exit 1
 fi
 
-COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" \
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" \
   -f "$BASE_COMPOSE_FILE" \
   -f "docker-compose.$NEW.yml" \
   up -d --build --remove-orphans
@@ -121,7 +123,7 @@ COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" \
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
 echo "[3/6] Installing PHP dependencies ..."
-COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --no-dev --prefer-dist --optimize-autoloader
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --no-dev --prefer-dist --optimize-autoloader
 
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
@@ -130,7 +132,7 @@ ELAPSED=0
 until curl -sf "http://127.0.0.1:$NEW_PORT/api/health" > /dev/null 2>&1; do
   if [[ $ELAPSED -ge $HEALTH_TIMEOUT ]]; then
     echo "ERROR: Health check timed out after ${HEALTH_TIMEOUT}s. Aborting." >&2
-    COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" logs --tail=50
+    APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" logs --tail=50
     exit 1
   fi
   sleep 2
@@ -141,8 +143,8 @@ echo "  ✓ $NEW stack is healthy"
 # ─── Run migrations ────────────────────────────────────────────────────────────
 echo ""
 echo "[5/6] Running migrations ..."
-COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan migrate --force
-COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan optimize
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan migrate --force
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan optimize
 
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""
@@ -164,7 +166,7 @@ echo ""
 echo "[7/7] Stopping old $ACTIVE stack ..."
 OLD_DIR="$BASE_DIR/$ACTIVE"
 if [[ -d "$OLD_DIR" ]]; then
-  COMPOSE_PROJECT_NAME="app_$ACTIVE" "${COMPOSE_BIN[@]}" \
+  APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$ACTIVE" "${COMPOSE_BIN[@]}" \
     -f "$OLD_DIR/$BASE_COMPOSE_FILE" \
     -f "$OLD_DIR/docker-compose.$ACTIVE.yml" \
     down --remove-orphans || true

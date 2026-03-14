@@ -153,82 +153,133 @@ Recommended flow:
 
 ### How it works
 
-- Two identical stacks run alternately: **blue** (port 8081) and **green** (port 8082).
-- **Caddy** runs on the host and proxies live traffic to the active stack.
-- Each deploy: pull code → build new stack → health check → migrate → switch Caddy → stop old stack.
-- Zero-downtime: traffic only switches after the new stack passes the health check.
+- Two stacks run alternately: **blue** and **green**.
+- App traffic is proxied by **Caddy** to the active stack (`18081` or `18082`, loopback only).
+- PgAdmin traffic is proxied by **Caddy** to the active stack PgAdmin (`15050` or `15051`, loopback only).
+- Deploy sequence is automated by `scripts/deploy.sh`:
+  1. Pull code into inactive color (`/opt/app/blue` or `/opt/app/green`)
+  2. Start stack (`docker-compose.deploy.yml` + color override)
+  3. Install Composer dependencies
+  4. Health check `/api/health`
+  5. Run migrations + optimize
+  6. Update and validate Caddy config, switch traffic
+  7. Stop old stack
 
-### VPS first-time setup
+### Requirements on VPS
+
+- Docker Engine running and user in `docker` group
+- **Docker Compose v2** (`docker compose`)
+- Caddy installed and managed by systemd (`caddy.service`)
+- Port `80` and `443` must be free for Caddy (disable LiteSpeed/Nginx/Apache on host if present)
+
+### First-time setup
 
 ```bash
-# 1. Install Caddy
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo apt update && sudo apt install caddy
-
-# 2. Install Docker
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER && newgrp docker
-
-# 3. Create base dir and drop your .env file
+# Create base dir
 sudo mkdir -p /opt/app
 sudo chown $USER:$USER /opt/app
-cp .env.production /opt/app/.env      # edit DB_PASSWORD, APP_KEY, APP_URL etc.
 
-# 4. First deploy
-DOMAIN=yourdomain.com ./scripts/deploy.sh \
-  --repo git@github.com:R2Rprogpower/guzleaks.git \
+# Clone setup repo
+git clone https://github.com/R2Rprogpower/guzleaks.git /opt/app/setup
+cd /opt/app/setup
+
+# Prepare env (APP_KEY can be empty; deploy script auto-generates if missing)
+cp .env.example /opt/app/.env
+```
+
+Set production values in `/opt/app/.env` (minimum):
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://ruslanrahimov.space
+
+DB_CONNECTION=pgsql
+DB_HOST=db
+DB_PORT=5432
+DB_DATABASE=app
+DB_USERNAME=app
+DB_PASSWORD=<strong-password>
+
+SCRAMBLE_PROTECT_DOCS=true
+
+PGADMIN_DEFAULT_EMAIL=admin@ruslanrahimov.space
+PGADMIN_DEFAULT_PASSWORD=<strong-password>
+```
+
+Run first deploy:
+
+```bash
+DOMAIN=ruslanrahimov.space \
+PGADMIN_DOMAIN=pgadmin.ruslanrahimov.space \
+bash scripts/deploy.sh \
+  --repo https://github.com/R2Rprogpower/guzleaks.git \
   --branch main \
   --env /opt/app/.env
 ```
 
-### Every subsequent deploy
+Subsequent deploys:
 
 ```bash
-DOMAIN=yourdomain.com ./scripts/deploy.sh
+cd /opt/app/setup
+git pull origin main
+
+DOMAIN=ruslanrahimov.space \
+PGADMIN_DOMAIN=pgadmin.ruslanrahimov.space \
+bash scripts/deploy.sh --repo https://github.com/R2Rprogpower/guzleaks.git --branch main --env /opt/app/.env
 ```
 
-The script (`scripts/deploy.sh`) will automatically:
-1. Pull latest code into the inactive color dir (`/opt/app/blue` or `/opt/app/green`)
-2. Build Docker image
-3. Start new stack
-4. Wait for `/api/health` to return 200
-5. Run `php artisan migrate --force` + `optimize`
-6. Reload Caddy to point at new stack
-7. Stop old stack
+### Access URLs
+
+- API: `https://ruslanrahimov.space`
+- PgAdmin: `https://pgadmin.ruslanrahimov.space`
+
+### PgAdmin PostgreSQL connection values
+
+When creating server in PgAdmin:
+
+- Hostname/address: `db`
+- Port: `5432`
+- Database: `app` (or `postgres`)
+- Username: `app`
+- Password: value of `DB_PASSWORD` in `/opt/app/.env`
+
+### Security notes (important)
+
+#### OpenAPI docs security
+
+- Keep `SCRAMBLE_PROTECT_DOCS=true` in production.
+- Do not expose docs publicly unless required.
+- If temporary public docs are needed, enable only briefly and revert.
+
+#### PostgreSQL security
+
+- PostgreSQL is **not** exposed publicly in deploy compose; keep it that way.
+- Do not publish `5432` to `0.0.0.0`.
+- Use strong `DB_PASSWORD` and rotate if leaked.
+- Keep DB access internal (app/pgAdmin over Docker network).
+
+#### PgAdmin security
+
+- Use strong `PGADMIN_DEFAULT_PASSWORD`.
+- Restrict PgAdmin DNS to trusted admins only when possible.
+- Optional hardening: add additional Caddy auth or IP allowlist for `pgadmin.*`.
 
 ### Relevant files
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.prod.yml` | Production overrides (no source mount, no pgAdmin, restart policies) |
-| `docker-compose.blue.yml` | Blue stack port mapping (8081) |
-| `docker-compose.green.yml` | Green stack port mapping (8082) |
-| `docker/caddy/Caddyfile` | Caddy template (host reverse proxy) |
-| `scripts/deploy.sh` | Blue-green deploy script |
+| `docker-compose.deploy.yml` | Deploy stack (app, nginx, db, redis, pgadmin) |
+| `docker-compose.blue.yml` | Blue color host/loopback ports |
+| `docker-compose.green.yml` | Green color host/loopback ports |
+| `scripts/deploy.sh` | Blue-green deployment orchestration |
 
-### Environment variables required on VPS
+### Troubleshooting quick hits
 
-```env
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://yourdomain.com
-APP_KEY=<generate: php artisan key:generate --show>
-DB_PASSWORD=<strong password>
-SCRAMBLE_PROTECT_DOCS=true
-```
-
-### Rollback
-
-```bash
-# Manually switch Caddy back to old port and re-start old stack
-# e.g. if blue just went live and you want to roll back to green:
-sudo sed -i 's/8081/8082/' /etc/caddy/Caddyfile
-sudo systemctl reload caddy
-cd /opt/app/green && docker compose -p app_green \
-  -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.green.yml up -d
-```
+- `address already in use :80` when switching Caddy: stop host LiteSpeed/Nginx/Apache.
+- `Cannot connect to Docker daemon`: start Docker and ensure deploy user is in docker group.
+- `MissingAppKeyException`: deploy script now auto-generates `APP_KEY` in `/opt/app/.env` if empty.
+- `File not found` on `/api/health`: ensure latest deploy script is pulled and deployment completed.
 
 ## TODO
 

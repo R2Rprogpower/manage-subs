@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,11 +14,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $moduleSeeders = [];
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        foreach (glob(app_path('Modules/*/Database/Seeders/*Seeder.php')) ?: [] as $path) {
+            if (! preg_match('#Modules/([^/]+)/Database/Seeders/([^/]+)\.php$#', str_replace('\\', '/', $path), $matches)) {
+                continue;
+            }
+
+            $moduleSeeders[] = sprintf(
+                'App\\Modules\\%s\\Database\\Seeders\\%s',
+                $matches[1],
+                $matches[2]
+            );
+        }
+
+        sort($moduleSeeders);
+
+        if ($moduleSeeders !== []) {
+            $this->call($moduleSeeders);
+        }
     }
 }

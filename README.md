@@ -90,6 +90,15 @@ Import the provided collection:
 
 - `postman/Auth-2FA.postman_collection.json`
 
+## OpenAPI / API docs
+
+This project uses Scramble for OpenAPI generation.
+
+- Docs UI: `http://localhost:8080/docs/api`
+- OpenAPI JSON: `http://localhost:8080/docs/api.json`
+
+By default, these docs are available only in the `local` environment.
+
 Recommended flow:
 
 1. `Sign Up`

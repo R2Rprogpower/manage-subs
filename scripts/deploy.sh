@@ -160,8 +160,8 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE
 
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
-echo "[3/10] Installing PHP dependencies ..."
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --no-dev --prefer-dist --optimize-autoloader
+echo "[3/10] Installing PHP dependencies (with dev for test gate) ..."
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --prefer-dist --optimize-autoloader
 
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
@@ -202,6 +202,9 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE
 
 echo "[8/10] Cleaning isolated test database ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";'"
+
+echo "[8/10] Pruning dev dependencies for production runtime ..."
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --no-dev --prefer-dist --optimize-autoloader
 
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""

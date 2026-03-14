@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
     volumes:
       - ./:/var/www/html
     environment:

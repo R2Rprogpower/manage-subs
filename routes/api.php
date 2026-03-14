@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/health', static function (): \Illuminate\Http\JsonResponse {
     DB::connection()->getPdo(); // throws if DB is unreachable
+
     return response()->json(['status' => 'ok']);
 });
 

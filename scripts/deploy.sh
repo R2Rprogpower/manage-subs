@@ -48,8 +48,8 @@ if [[ -z "${REPO:-}" ]]; then
 fi
 BRANCH="${BRANCH:-main}"
 
-# Copy .env if supplied
-if [[ -n "$ENV_PATH" ]]; then
+# Copy .env if supplied and it's not already the same file
+if [[ -n "$ENV_PATH" && "$(realpath "$ENV_PATH")" != "$(realpath "$ENV_SOURCE")" ]]; then
   cp "$ENV_PATH" "$ENV_SOURCE"
 fi
 if [[ ! -f "$ENV_SOURCE" ]]; then

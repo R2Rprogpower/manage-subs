@@ -129,7 +129,7 @@ return [
 
     'middleware' => array_values(array_filter([
         'web',
-        env('SCRAMBLE_PROTECT_DOCS', false) ? RestrictedDocsAccess::class : null,
+        env('SCRAMBLE_PROTECT_DOCS', true) ? RestrictedDocsAccess::class : null,
     ])),
 
     'extensions' => [],

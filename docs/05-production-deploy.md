@@ -58,6 +58,7 @@ SCRAMBLE_PROTECT_DOCS=true
 
 PGADMIN_DEFAULT_EMAIL=admin@ruslanrahimov.space
 PGADMIN_DEFAULT_PASSWORD=<strong-password>
+ACME_EMAIL=ops@ruslanrahimov.space
 ```
 
 ## Deploy commands
@@ -95,8 +96,17 @@ For multi-app template usage, see `docs/08-template-repo-workflow.md`.
 In `.github/workflows/ci.yml`, update deploy job env values per app:
 
 - `DEPLOY_SETUP_DIR`
+- `DEPLOY_ENV_FILE`
 - `APP_DOMAIN`
 - `PGADMIN_DOMAIN`
+- `ACME_EMAIL`
+
+Recommended: set these as GitHub **Repository Variables** (`Settings → Secrets and variables → Actions → Variables`).
+
+Important:
+
+- Never leave placeholder domains like `your-domain.tld` in deploy configuration.
+- `ACME_EMAIL` must be a real email (not `@example.com`) or certificate issuance can fail.
 
 ## Required GitHub secrets
 

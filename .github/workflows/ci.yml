@@ -49,9 +49,11 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
-      DEPLOY_SETUP_DIR: /opt/app/setup
-      APP_DOMAIN: your-domain.tld
-      PGADMIN_DOMAIN: pgadmin.your-domain.tld
+      DEPLOY_SETUP_DIR: ${{ vars.DEPLOY_SETUP_DIR }}
+      DEPLOY_ENV_FILE: ${{ vars.DEPLOY_ENV_FILE }}
+      APP_DOMAIN: ${{ vars.APP_DOMAIN }}
+      PGADMIN_DOMAIN: ${{ vars.PGADMIN_DOMAIN }}
+      ACME_EMAIL: ${{ vars.ACME_EMAIL }}
 
     steps:
       - name: Deploy to VPS over SSH
@@ -61,14 +63,22 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script_stop: true
-          envs: DEPLOY_SETUP_DIR,APP_DOMAIN,PGADMIN_DOMAIN
+          envs: DEPLOY_SETUP_DIR,DEPLOY_ENV_FILE,APP_DOMAIN,PGADMIN_DOMAIN,ACME_EMAIL
           script: |
             set -e
+
+            : "${DEPLOY_SETUP_DIR:?Missing repository variable DEPLOY_SETUP_DIR}"
+            : "${DEPLOY_ENV_FILE:?Missing repository variable DEPLOY_ENV_FILE}"
+            : "${APP_DOMAIN:?Missing repository variable APP_DOMAIN}"
+            : "${PGADMIN_DOMAIN:?Missing repository variable PGADMIN_DOMAIN}"
+            : "${ACME_EMAIL:?Missing repository variable ACME_EMAIL}"
+
             cd "$DEPLOY_SETUP_DIR"
             git pull origin main
             DOMAIN="$APP_DOMAIN" \
             PGADMIN_DOMAIN="$PGADMIN_DOMAIN" \
-            bash scripts/deploy.sh --env /opt/app/.env
+            ACME_EMAIL="$ACME_EMAIL" \
+            bash scripts/deploy.sh --env "$DEPLOY_ENV_FILE"
 
       - name: Notify deploy success
         if: success()

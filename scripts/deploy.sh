@@ -24,6 +24,21 @@ APP_GID="$(id -g)"
 TEST_DB_NAME="${DEPLOY_TEST_DB_NAME:-app_deploy_test}"
 LOCK_FILE="$BASE_DIR/.deploy.lock"
 
+is_valid_domain() {
+  local value="$1"
+  [[ "$value" =~ ^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$ ]]
+}
+
+is_placeholder_domain() {
+  local value="${1,,}"
+  [[ "$value" == "localhost" || "$value" == "your-domain.tld" || "$value" == "pgadmin.your-domain.tld" ]]
+}
+
+is_valid_email() {
+  local value="$1"
+  [[ "$value" =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]]
+}
+
 run_as_root() {
   if [[ "$(id -u)" -eq 0 ]]; then
     "$@"
@@ -114,6 +129,41 @@ if [[ -n "$ENV_PATH" && "$(realpath "$ENV_PATH")" != "$(realpath "$ENV_SOURCE")"
 fi
 if [[ ! -f "$ENV_SOURCE" ]]; then
   echo "ERROR: $ENV_SOURCE not found. Provide --env on first run." >&2
+  exit 1
+fi
+
+DOMAIN="${DOMAIN:-}"
+PGADMIN_DOMAIN="${PGADMIN_DOMAIN:-}"
+if [[ -z "$PGADMIN_DOMAIN" && -n "$DOMAIN" ]]; then
+  PGADMIN_DOMAIN="pgadmin.${DOMAIN}"
+fi
+
+ACME_EMAIL="${ACME_EMAIL:-$(grep -E '^ACME_EMAIL=' "$ENV_SOURCE" | tail -n1 | cut -d'=' -f2- || true)}"
+
+if [[ -z "$DOMAIN" ]]; then
+  echo "ERROR: DOMAIN is required (example: DOMAIN=api.example.com)." >&2
+  exit 1
+fi
+if is_placeholder_domain "$DOMAIN" || ! is_valid_domain "$DOMAIN"; then
+  echo "ERROR: DOMAIN is invalid or placeholder: '$DOMAIN'." >&2
+  exit 1
+fi
+
+if [[ -z "$PGADMIN_DOMAIN" ]]; then
+  echo "ERROR: PGADMIN_DOMAIN is required (example: PGADMIN_DOMAIN=pgadmin.example.com)." >&2
+  exit 1
+fi
+if is_placeholder_domain "$PGADMIN_DOMAIN" || ! is_valid_domain "$PGADMIN_DOMAIN"; then
+  echo "ERROR: PGADMIN_DOMAIN is invalid or placeholder: '$PGADMIN_DOMAIN'." >&2
+  exit 1
+fi
+
+if [[ -z "$ACME_EMAIL" ]]; then
+  echo "ERROR: ACME_EMAIL is required (set env var or ACME_EMAIL in $ENV_SOURCE)." >&2
+  exit 1
+fi
+if ! is_valid_email "$ACME_EMAIL" || [[ "${ACME_EMAIL,,}" == *"@example.com" ]]; then
+  echo "ERROR: ACME_EMAIL is invalid or forbidden for ACME registration: '$ACME_EMAIL'." >&2
   exit 1
 fi
 
@@ -241,14 +291,14 @@ echo "[9/10] Switching Caddy to port $NEW_PORT ..."
 CADDY_TMP_FILE="$(mktemp)"
 cat > "$CADDY_TMP_FILE" <<EOF
 {
-    email admin@example.com
+  email ${ACME_EMAIL}
 }
 
-${DOMAIN:-localhost} {
+${DOMAIN} {
     reverse_proxy 127.0.0.1:${NEW_PORT}
 }
 
-${PGADMIN_DOMAIN:-pgadmin.${DOMAIN:-localhost}} {
+${PGADMIN_DOMAIN} {
   reverse_proxy 127.0.0.1:${NEW_PGADMIN_PORT}
 }
 EOF

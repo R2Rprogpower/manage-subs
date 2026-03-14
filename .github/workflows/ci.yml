@@ -66,17 +66,29 @@ jobs:
             bash scripts/deploy.sh --env /opt/app/.env
 
       - name: Notify deploy success
-        if: success() && secrets.DEPLOY_WEBHOOK_URL != ''
+        if: success()
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
         run: |
+          if [ -z "${DEPLOY_WEBHOOK_URL:-}" ]; then
+            echo "DEPLOY_WEBHOOK_URL is not set; skipping success notification."
+            exit 0
+          fi
           payload=$(printf '{"text":"✅ Deploy succeeded for %s @ %s"}' "$GITHUB_REPOSITORY" "$GITHUB_SHA")
-          curl -sS -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}" \
+          curl -sS -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d "$payload"
 
       - name: Notify deploy failure
-        if: failure() && secrets.DEPLOY_WEBHOOK_URL != ''
+        if: failure()
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
         run: |
+          if [ -z "${DEPLOY_WEBHOOK_URL:-}" ]; then
+            echo "DEPLOY_WEBHOOK_URL is not set; skipping failure notification."
+            exit 0
+          fi
           payload=$(printf '{"text":"❌ Deploy failed for %s @ %s. Check GitHub Actions logs."}' "$GITHUB_REPOSITORY" "$GITHUB_SHA")
-          curl -sS -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}" \
+          curl -sS -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d "$payload"

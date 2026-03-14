@@ -14,6 +14,8 @@ CONFIG_FILE="$BASE_DIR/config"
 ENV_SOURCE="$BASE_DIR/.env"
 PORT_BLUE="${BLUE_HTTP_PORT:-18081}"
 PORT_GREEN="${GREEN_HTTP_PORT:-18082}"
+PORT_PGADMIN_BLUE="${BLUE_PGADMIN_PORT:-15050}"
+PORT_PGADMIN_GREEN="${GREEN_PGADMIN_PORT:-15051}"
 HEALTH_TIMEOUT=60     # seconds to wait for new stack to become healthy
 CADDY_FILE="/etc/caddy/Caddyfile"
 BASE_COMPOSE_FILE="docker-compose.deploy.yml"
@@ -91,9 +93,9 @@ fi
 # ─── Determine colors ──────────────────────────────────────────────────────────
 ACTIVE=$(cat "$STATE_FILE" 2>/dev/null || echo "green")   # green = nothing running yet
 if [[ "$ACTIVE" == "blue" ]]; then
-  NEW="green"; NEW_PORT=$PORT_GREEN; OLD_PORT=$PORT_BLUE
+  NEW="green"; NEW_PORT=$PORT_GREEN; NEW_PGADMIN_PORT=$PORT_PGADMIN_GREEN; OLD_PORT=$PORT_BLUE
 else
-  NEW="blue";  NEW_PORT=$PORT_BLUE;  OLD_PORT=$PORT_GREEN
+  NEW="blue";  NEW_PORT=$PORT_BLUE;  NEW_PGADMIN_PORT=$PORT_PGADMIN_BLUE; OLD_PORT=$PORT_GREEN
 fi
 
 echo ""
@@ -168,6 +170,10 @@ cat > "$CADDY_TMP_FILE" <<EOF
 
 ${DOMAIN:-localhost} {
     reverse_proxy 127.0.0.1:${NEW_PORT}
+}
+
+${PGADMIN_DOMAIN:-pgadmin.${DOMAIN:-localhost}} {
+  reverse_proxy 127.0.0.1:${NEW_PGADMIN_PORT}
 }
 EOF
 

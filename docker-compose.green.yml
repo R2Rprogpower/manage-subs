@@ -10,3 +10,7 @@ services:
   redis:
     ports:
       - "127.0.0.1:56380:6379"
+
+  pgadmin:
+    ports:
+      - "127.0.0.1:15051:80"

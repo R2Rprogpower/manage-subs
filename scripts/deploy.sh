@@ -21,6 +21,7 @@ CADDY_FILE="/etc/caddy/Caddyfile"
 BASE_COMPOSE_FILE="docker-compose.deploy.yml"
 APP_UID="$(id -u)"
 APP_GID="$(id -g)"
+TEST_DB_NAME="${DEPLOY_TEST_DB_NAME:-app_deploy_test}"
 
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_BIN=(docker compose)
@@ -79,6 +80,12 @@ if [[ ! -f "$ENV_SOURCE" ]]; then
   exit 1
 fi
 
+DB_USERNAME_VALUE="$(grep -E '^DB_USERNAME=' "$ENV_SOURCE" | tail -n1 | cut -d'=' -f2- || true)"
+DB_PASSWORD_VALUE="$(grep -E '^DB_PASSWORD=' "$ENV_SOURCE" | tail -n1 | cut -d'=' -f2- || true)"
+if [[ -z "$DB_USERNAME_VALUE" ]]; then
+  DB_USERNAME_VALUE="app"
+fi
+
 CURRENT_APP_KEY="$(grep -E '^APP_KEY=' "$ENV_SOURCE" | head -n1 | cut -d'=' -f2- || true)"
 if [[ -z "$CURRENT_APP_KEY" ]]; then
   GENERATED_APP_KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
@@ -108,7 +115,7 @@ NEW_DIR="$BASE_DIR/$NEW"
 
 # ─── Pull latest code ──────────────────────────────────────────────────────────
 echo ""
-echo "[1/6] Pulling code into $NEW_DIR ..."
+echo "[1/10] Pulling code into $NEW_DIR ..."
 if [[ -d "$NEW_DIR/.git" ]]; then
   git -C "$NEW_DIR" fetch origin
   git -C "$NEW_DIR" reset --hard "origin/$BRANCH"
@@ -121,7 +128,7 @@ cp "$ENV_SOURCE" "$NEW_DIR/.env"
 
 # ─── Build & start new stack ───────────────────────────────────────────────────
 echo ""
-echo "[2/6] Building and starting $NEW stack ..."
+echo "[2/10] Building and starting $NEW stack ..."
 cd "$NEW_DIR"
 if [[ ! -f "$BASE_COMPOSE_FILE" ]]; then
   echo "ERROR: $BASE_COMPOSE_FILE not found in $NEW_DIR." >&2
@@ -135,12 +142,12 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE
 
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
-echo "[3/6] Installing PHP dependencies ..."
+echo "[3/10] Installing PHP dependencies ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --no-dev --prefer-dist --optimize-autoloader
 
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
-echo "[4/6] Waiting for $NEW stack on port $NEW_PORT ..."
+echo "[4/10] Waiting for $NEW stack on port $NEW_PORT ..."
 ELAPSED=0
 until curl -sf "http://127.0.0.1:$NEW_PORT/api/health" > /dev/null 2>&1; do
   if [[ $ELAPSED -ge $HEALTH_TIMEOUT ]]; then
@@ -155,13 +162,32 @@ echo "  ✓ $NEW stack is healthy"
 
 # ─── Run migrations ────────────────────────────────────────────────────────────
 echo ""
-echo "[5/6] Running migrations ..."
+echo "[5/10] Running migrations ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan migrate --force
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan optimize
 
+# ─── Run tests on isolated DB ─────────────────────────────────────────────────
+echo ""
+echo "[6/10] Creating isolated test database ($TEST_DB_NAME) ..."
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";' -c 'CREATE DATABASE \"$TEST_DB_NAME\";'"
+
+echo "[7/10] Running test suite against isolated database ..."
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app env \
+  APP_ENV=testing \
+  DB_CONNECTION=pgsql \
+  DB_HOST=db \
+  DB_PORT=5432 \
+  DB_DATABASE="$TEST_DB_NAME" \
+  DB_USERNAME="$DB_USERNAME_VALUE" \
+  DB_PASSWORD="$DB_PASSWORD_VALUE" \
+  php artisan test --testsuite=Unit --testsuite=Feature
+
+echo "[8/10] Cleaning isolated test database ..."
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";'"
+
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""
-echo "[6/6] Switching Caddy to port $NEW_PORT ..."
+echo "[9/10] Switching Caddy to port $NEW_PORT ..."
 CADDY_TMP_FILE="$(mktemp)"
 cat > "$CADDY_TMP_FILE" <<EOF
 {
@@ -202,7 +228,7 @@ echo "  ✓ Traffic now routed to $NEW (port $NEW_PORT)"
 
 # ─── Tear down old stack ───────────────────────────────────────────────────────
 echo ""
-echo "[7/7] Stopping old $ACTIVE stack ..."
+echo "[10/10] Stopping old $ACTIVE stack ..."
 OLD_DIR="$BASE_DIR/$ACTIVE"
 if [[ -d "$OLD_DIR" ]]; then
   APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$ACTIVE" "${COMPOSE_BIN[@]}" \

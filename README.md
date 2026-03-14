@@ -161,9 +161,11 @@ Recommended flow:
   2. Start stack (`docker-compose.deploy.yml` + color override)
   3. Install Composer dependencies
   4. Health check `/api/health`
-  5. Run migrations + optimize
-  6. Update and validate Caddy config, switch traffic
-  7. Stop old stack
+  5. Run production migrations (`php artisan migrate --force`, never `migrate:fresh`)
+  6. Create isolated test DB on the new color (`app_deploy_test` by default)
+  7. Run unit + feature tests against isolated test DB
+  8. Update and validate Caddy config, switch traffic
+  9. Stop old stack
 
 ### Requirements on VPS
 
@@ -226,8 +228,20 @@ git pull origin main
 
 DOMAIN=ruslanrahimov.space \
 PGADMIN_DOMAIN=pgadmin.ruslanrahimov.space \
-bash scripts/deploy.sh --repo https://github.com/R2Rprogpower/guzleaks.git --branch main --env /opt/app/.env
+bash scripts/deploy.sh --env /opt/app/.env
 ```
+
+### Deploy modes
+
+- Manual (always available): run the command above on VPS after pushing to `main`.
+- Automatic: `.github/workflows/deploy.yml` runs on every push to `main` and triggers the same VPS deploy script.
+
+Required GitHub Secrets for auto-deploy:
+
+- `VPS_HOST`
+- `VPS_USER`
+- `VPS_SSH_KEY`
+- `VPS_PORT` (optional, defaults to `22`)
 
 ### Access URLs
 
@@ -258,6 +272,7 @@ When creating server in PgAdmin:
 - Do not publish `5432` to `0.0.0.0`.
 - Use strong `DB_PASSWORD` and rotate if leaked.
 - Keep DB access internal (app/pgAdmin over Docker network).
+- Deploy tests run against a separate DB (`DEPLOY_TEST_DB_NAME`, default `app_deploy_test`) to avoid touching production data.
 
 #### PgAdmin security
 

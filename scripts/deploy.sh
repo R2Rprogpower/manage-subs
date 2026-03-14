@@ -24,6 +24,27 @@ APP_GID="$(id -g)"
 TEST_DB_NAME="${DEPLOY_TEST_DB_NAME:-app_deploy_test}"
 LOCK_FILE="$BASE_DIR/.deploy.lock"
 
+run_as_root() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    "$@"
+    return
+  fi
+
+  if ! command -v sudo >/dev/null 2>&1; then
+    echo "ERROR: sudo is required to update/reload Caddy during deploy." >&2
+    exit 1
+  fi
+
+  if ! sudo -n true >/dev/null 2>&1; then
+    echo "ERROR: passwordless sudo is required for non-interactive deploys (GitHub Actions)." >&2
+    echo "Grant NOPASSWD for deploy user on required commands, e.g.:" >&2
+    echo "  /usr/bin/install, /usr/bin/systemctl, /usr/bin/caddy" >&2
+    exit 1
+  fi
+
+  sudo -n "$@"
+}
+
 if ! command -v flock >/dev/null 2>&1; then
   echo "ERROR: flock is required (install util-linux package)." >&2
   exit 1
@@ -237,20 +258,20 @@ EOF
 if [[ -w "$CADDY_FILE" ]] || [[ ! -e "$CADDY_FILE" && -w "$(dirname "$CADDY_FILE")" ]]; then
   install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
 else
-  sudo install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
+  run_as_root install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
 fi
 
 rm -f "$CADDY_TMP_FILE"
 
 if command -v caddy >/dev/null 2>&1; then
-  sudo caddy fmt --overwrite "$CADDY_FILE" >/dev/null 2>&1 || true
-  sudo caddy validate --config "$CADDY_FILE" --adapter caddyfile
+  run_as_root caddy fmt --overwrite "$CADDY_FILE" >/dev/null 2>&1 || true
+  run_as_root caddy validate --config "$CADDY_FILE" --adapter caddyfile
 fi
 
 if command -v systemctl >/dev/null 2>&1; then
-  sudo systemctl reload caddy || sudo systemctl restart caddy
+  run_as_root systemctl reload caddy || run_as_root systemctl restart caddy
 elif command -v caddy >/dev/null 2>&1; then
-  sudo caddy reload --config "$CADDY_FILE" --adapter caddyfile
+  run_as_root caddy reload --config "$CADDY_FILE" --adapter caddyfile
 else
   echo "ERROR: Neither systemctl nor caddy CLI is available to reload Caddy." >&2
   exit 1

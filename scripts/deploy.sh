@@ -21,6 +21,14 @@ BASE_COMPOSE_FILE="docker-compose.deploy.yml"
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_BIN=(docker compose)
 elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_V1_VERSION="$(docker-compose version --short 2>/dev/null || true)"
+  if [[ "$COMPOSE_V1_VERSION" =~ ^1\. ]]; then
+    echo "ERROR: docker-compose v1 ($COMPOSE_V1_VERSION) is not supported for blue-green deploy on this host." >&2
+    echo "Install Docker Compose v2 plugin and rerun." >&2
+    echo "Ubuntu quick fix:" >&2
+    echo "  sudo apt-get update && sudo apt-get install -y docker-compose-plugin" >&2
+    exit 1
+  fi
   COMPOSE_BIN=(docker-compose)
 else
   echo "ERROR: Neither 'docker compose' nor 'docker-compose' is available." >&2

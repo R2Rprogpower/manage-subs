@@ -16,6 +16,7 @@ PORT_BLUE=8081
 PORT_GREEN=8082
 HEALTH_TIMEOUT=60     # seconds to wait for new stack to become healthy
 CADDY_FILE="/etc/caddy/Caddyfile"
+BASE_COMPOSE_FILE="docker-compose.deploy.yml"
 
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_BIN=(docker compose)
@@ -99,9 +100,13 @@ cp "$ENV_SOURCE" "$NEW_DIR/.env"
 echo ""
 echo "[2/6] Building and starting $NEW stack ..."
 cd "$NEW_DIR"
+if [[ ! -f "$BASE_COMPOSE_FILE" ]]; then
+  echo "ERROR: $BASE_COMPOSE_FILE not found in $NEW_DIR." >&2
+  exit 1
+fi
+
 COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" \
-  -f docker-compose.yml \
-  -f docker-compose.prod.yml \
+  -f "$BASE_COMPOSE_FILE" \
   -f "docker-compose.$NEW.yml" \
   up -d --build --remove-orphans
 
@@ -147,8 +152,7 @@ echo "[6/6] Stopping old $ACTIVE stack ..."
 OLD_DIR="$BASE_DIR/$ACTIVE"
 if [[ -d "$OLD_DIR" ]]; then
   COMPOSE_PROJECT_NAME="app_$ACTIVE" "${COMPOSE_BIN[@]}" \
-    -f "$OLD_DIR/docker-compose.yml" \
-    -f "$OLD_DIR/docker-compose.prod.yml" \
+    -f "$OLD_DIR/$BASE_COMPOSE_FILE" \
     -f "$OLD_DIR/docker-compose.$ACTIVE.yml" \
     down --remove-orphans || true
 fi

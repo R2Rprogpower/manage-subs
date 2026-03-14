@@ -1,6 +1,6 @@
 SHELL := /bin/sh
 
-.PHONY: install-hooks check fmt lint test up build
+.PHONY: install-hooks check fmt lint test unit-test feature-test up build
 
 install-hooks:
 	@mkdir -p .git/hooks
@@ -21,8 +21,13 @@ lint:
 	docker compose exec -T -u root app rm -rf /tmp/phpstan
 	docker compose exec -T app ./vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=1G
 
-test:
+unit-test:
 	docker compose exec -T app php artisan test --testsuite=Unit
+
+feature-test:
+	docker compose exec -T app php artisan test --testsuite=Feature
+
+test: unit-test feature-test
 
 check: fmt lint test
 	@echo "All checks passed."
@@ -47,4 +52,5 @@ ci-check:
 	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app rm -rf /tmp/phpstan
 	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app ./vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=1G
 	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app php artisan test --testsuite=Unit
+	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app php artisan test --testsuite=Feature
 	@echo "All CI checks passed."

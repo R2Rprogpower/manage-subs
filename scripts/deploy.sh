@@ -149,7 +149,8 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""
 echo "[6/6] Switching Caddy to port $NEW_PORT ..."
-cat > "$CADDY_FILE" <<EOF
+CADDY_TMP_FILE="$(mktemp)"
+cat > "$CADDY_TMP_FILE" <<EOF
 {
     email admin@example.com
 }
@@ -158,7 +159,16 @@ ${DOMAIN:-localhost} {
     reverse_proxy 127.0.0.1:${NEW_PORT}
 }
 EOF
-systemctl reload caddy || caddy reload --config "$CADDY_FILE"
+
+if [[ -w "$CADDY_FILE" ]] || [[ ! -e "$CADDY_FILE" && -w "$(dirname "$CADDY_FILE")" ]]; then
+  install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
+else
+  sudo install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
+fi
+
+rm -f "$CADDY_TMP_FILE"
+
+sudo systemctl reload caddy || sudo caddy reload --config "$CADDY_FILE"
 echo "  ✓ Traffic now routed to $NEW (port $NEW_PORT)"
 
 # ─── Tear down old stack ───────────────────────────────────────────────────────

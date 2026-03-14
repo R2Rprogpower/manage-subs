@@ -6,12 +6,12 @@ namespace App\Modules\Users\Presentations;
 
 use App\Core\Abstracts\Presentation;
 use App\Core\Interfaces\PresentationInterface;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 
 class UserIndexPresentation extends Presentation implements PresentationInterface
 {
     /**
-     * @param  Collection<int, \App\Models\User>  $data
      * @return array<int|string, mixed>
      */
     public function present(mixed $data): array
@@ -20,7 +20,8 @@ class UserIndexPresentation extends Presentation implements PresentationInterfac
             return parent::present($data);
         }
 
-        $users = $data->values()->map(function ($user) {
+        /** @var Collection<int, User> $data */
+        $users = $data->values()->map(function (User $user) {
             return $this->formatUser($user);
         })->toArray();
 
@@ -28,10 +29,9 @@ class UserIndexPresentation extends Presentation implements PresentationInterfac
     }
 
     /**
-     * @param  \App\Models\User  $user
      * @return array<string, mixed>
      */
-    private function formatUser($user): array
+    private function formatUser(User $user): array
     {
         return [
             'id' => $user->id,

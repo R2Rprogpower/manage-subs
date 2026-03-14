@@ -11,7 +11,6 @@ use App\Models\User;
 class UserStorePresentation extends Presentation implements PresentationInterface
 {
     /**
-     * @param  User  $data
      * @return array<int|string, mixed>
      */
     public function present(mixed $data): array

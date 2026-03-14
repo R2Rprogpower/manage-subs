@@ -11,7 +11,6 @@ use Spatie\Permission\Models\Permission;
 class PermissionShowPresentation extends Presentation implements PresentationInterface
 {
     /**
-     * @param  Permission  $data
      * @return array<int|string, mixed>
      */
     public function present(mixed $data): array

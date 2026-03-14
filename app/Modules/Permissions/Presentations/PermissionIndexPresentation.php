@@ -7,11 +7,11 @@ namespace App\Modules\Permissions\Presentations;
 use App\Core\Abstracts\Presentation;
 use App\Core\Interfaces\PresentationInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Spatie\Permission\Models\Permission;
 
 class PermissionIndexPresentation extends Presentation implements PresentationInterface
 {
     /**
-     * @param  Collection<int, \Spatie\Permission\Models\Permission>  $data
      * @return array<int|string, mixed>
      */
     public function present(mixed $data): array
@@ -20,7 +20,8 @@ class PermissionIndexPresentation extends Presentation implements PresentationIn
             return parent::present($data);
         }
 
-        $permissions = $data->map(function ($permission) {
+        /** @var Collection<int, Permission> $data */
+        $permissions = $data->map(function (Permission $permission) {
             return $this->formatPermission($permission);
         })->toArray();
 
@@ -28,10 +29,9 @@ class PermissionIndexPresentation extends Presentation implements PresentationIn
     }
 
     /**
-     * @param  \Spatie\Permission\Models\Permission  $permission
      * @return array<string, mixed>
      */
-    private function formatPermission($permission): array
+    private function formatPermission(Permission $permission): array
     {
         return [
             'id' => $permission->id,

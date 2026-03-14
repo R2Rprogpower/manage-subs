@@ -7,11 +7,11 @@ namespace App\Modules\Permissions\Presentations;
 use App\Core\Abstracts\Presentation;
 use App\Core\Interfaces\PresentationInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Spatie\Permission\Models\Role;
 
 class RoleIndexPresentation extends Presentation implements PresentationInterface
 {
     /**
-     * @param  Collection<int, \Spatie\Permission\Models\Role>  $data
      * @return array<int|string, mixed>
      */
     public function present(mixed $data): array
@@ -20,7 +20,8 @@ class RoleIndexPresentation extends Presentation implements PresentationInterfac
             return parent::present($data);
         }
 
-        $roles = $data->map(function ($role) {
+        /** @var Collection<int, Role> $data */
+        $roles = $data->map(function (Role $role) {
             return $this->formatRole($role);
         })->toArray();
 
@@ -28,10 +29,9 @@ class RoleIndexPresentation extends Presentation implements PresentationInterfac
     }
 
     /**
-     * @param  \Spatie\Permission\Models\Role  $role
      * @return array<string, mixed>
      */
-    private function formatRole($role): array
+    private function formatRole(Role $role): array
     {
         return [
             'id' => $role->id,

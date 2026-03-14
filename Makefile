@@ -18,7 +18,7 @@ fmt:
 	docker compose exec -T app ./vendor/bin/pint
 
 lint:
-	docker compose exec -T app ./vendor/bin/phpstan analyse -c phpstan.neon
+	docker compose exec -T app ./vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=1G
 
 test:
 	docker compose exec -T app php artisan test --testsuite=Unit

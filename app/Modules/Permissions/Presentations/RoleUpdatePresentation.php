@@ -11,7 +11,6 @@ use Spatie\Permission\Models\Role;
 class RoleUpdatePresentation extends Presentation implements PresentationInterface
 {
     /**
-     * @param  Role  $data
      * @return array<int|string, mixed>
      */
     public function present(mixed $data): array

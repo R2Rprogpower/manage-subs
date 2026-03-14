@@ -90,6 +90,14 @@ bash scripts/deploy.sh --env /opt/app/.env
 - Automatic: `.github/workflows/ci.yml` runs checks, then deploys on push to main.
 - Parallel deploy protection: `scripts/deploy.sh` lock file (`/opt/app/.deploy.lock`).
 
+For multi-app template usage, see `docs/08-template-repo-workflow.md`.
+
+In `.github/workflows/ci.yml`, update deploy job env values per app:
+
+- `DEPLOY_SETUP_DIR`
+- `APP_DOMAIN`
+- `PGADMIN_DOMAIN`
+
 ## Required GitHub secrets
 
 - `VPS_HOST`

@@ -11,6 +11,7 @@ This repository documentation is split into focused files in `docs/` for easier 
 5. [Production deploy (blue-green)](docs/05-production-deploy.md)
 6. [Rollback and backups](docs/06-rollback-and-backups.md)
 7. [Security and troubleshooting](docs/07-security-and-troubleshooting.md)
+8. [Template repo workflow (multi-app)](docs/08-template-repo-workflow.md)
 
 ## Quick start
 

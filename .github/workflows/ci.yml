@@ -48,6 +48,10 @@ jobs:
     needs: docker-checks
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_SETUP_DIR: /opt/app/setup
+      APP_DOMAIN: your-domain.tld
+      PGADMIN_DOMAIN: pgadmin.your-domain.tld
 
     steps:
       - name: Deploy to VPS over SSH
@@ -57,12 +61,13 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script_stop: true
+          envs: DEPLOY_SETUP_DIR,APP_DOMAIN,PGADMIN_DOMAIN
           script: |
             set -e
-            cd /opt/app/setup
+            cd "$DEPLOY_SETUP_DIR"
             git pull origin main
-            DOMAIN=ruslanrahimov.space \
-            PGADMIN_DOMAIN=pgadmin.ruslanrahimov.space \
+            DOMAIN="$APP_DOMAIN" \
+            PGADMIN_DOMAIN="$PGADMIN_DOMAIN" \
             bash scripts/deploy.sh --env /opt/app/.env
 
       - name: Notify deploy success

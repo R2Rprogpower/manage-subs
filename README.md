@@ -79,3 +79,12 @@ docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate
 
 make install-hooks
+
+
+docker compose exec app  php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+
+docker compose exec -T app php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+
+docker compose exec app  php artisan optimize:clear
+
+docker compose exec app  php artisan migrate

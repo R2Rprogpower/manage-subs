@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Permissions\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Spatie\Permission\Models\Role;
+
+class RoleResource extends JsonResource
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        /** @var Role $role */
+        $role = $this->resource;
+
+        return [
+            'id' => $role->id,
+            'name' => $role->name,
+            'guard_name' => $role->guard_name,
+            'permissions' => $this->whenLoaded('permissions', function () use ($role) {
+                /** @var \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions */
+                $permissions = $role->getAllPermissions();
+
+                return $permissions->map(fn ($permission) => [
+                    'id' => $permission->id,
+                    'name' => $permission->name,
+                ]);
+            }),
+            'created_at' => $role->created_at?->toISOString(),
+            'updated_at' => $role->updated_at?->toISOString(),
+        ];
+    }
+}

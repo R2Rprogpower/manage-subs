@@ -125,3 +125,8 @@ Recommended flow:
 
 - This project uses **PostgreSQL**, so use **pgAdmin**.
 - If you run Artisan locally (outside Docker), ensure required PHP extensions are installed.
+
+
+## TODO
+
+- PI versioning (/api/v1)

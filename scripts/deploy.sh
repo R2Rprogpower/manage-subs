@@ -168,7 +168,19 @@ fi
 
 rm -f "$CADDY_TMP_FILE"
 
-sudo systemctl reload caddy || sudo caddy reload --config "$CADDY_FILE"
+if command -v caddy >/dev/null 2>&1; then
+  sudo caddy fmt --overwrite "$CADDY_FILE" >/dev/null 2>&1 || true
+  sudo caddy validate --config "$CADDY_FILE" --adapter caddyfile
+fi
+
+if command -v systemctl >/dev/null 2>&1; then
+  sudo systemctl reload caddy || sudo systemctl restart caddy
+elif command -v caddy >/dev/null 2>&1; then
+  sudo caddy reload --config "$CADDY_FILE" --adapter caddyfile
+else
+  echo "ERROR: Neither systemctl nor caddy CLI is available to reload Caddy." >&2
+  exit 1
+fi
 echo "  ✓ Traffic now routed to $NEW (port $NEW_PORT)"
 
 # ─── Tear down old stack ───────────────────────────────────────────────────────

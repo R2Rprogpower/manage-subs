@@ -1,0 +1,8 @@
+{
+    email admin@example.com
+}
+
+# Replace yourdomain.com with your real domain
+yourdomain.com {
+    reverse_proxy 127.0.0.1:8081
+}

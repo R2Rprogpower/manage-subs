@@ -1,0 +1,28 @@
+services:
+  app:
+    volumes: []                          # no source mount in prod; code is baked into image
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      PHP_MEMORY_LIMIT: 512M
+    env_file:
+      - .env
+
+  nginx:
+    restart: unless-stopped
+    volumes:
+      - ./public:/var/www/html/public:ro     # only serve public/
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+  db:
+    restart: unless-stopped
+    ports: []                            # never expose DB to host in prod
+
+  redis:
+    restart: unless-stopped
+    ports: []                            # never expose Redis to host in prod
+
+  # remove pgadmin in production
+  pgadmin:
+    profiles:
+      - dev                              # only starts with: docker compose --profile dev up

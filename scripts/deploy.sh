@@ -91,7 +91,7 @@ echo ""
 echo "[2/6] Building and starting $NEW stack ..."
 cd "$NEW_DIR"
 docker compose \
-  -p "app_$NEW" \
+  --project-name "app_$NEW" \
   -f docker-compose.yml \
   -f docker-compose.prod.yml \
   -f "docker-compose.$NEW.yml" \
@@ -104,7 +104,7 @@ ELAPSED=0
 until curl -sf "http://127.0.0.1:$NEW_PORT/api/health" > /dev/null 2>&1; do
   if [[ $ELAPSED -ge $HEALTH_TIMEOUT ]]; then
     echo "ERROR: Health check timed out after ${HEALTH_TIMEOUT}s. Aborting." >&2
-    docker compose -p "app_$NEW" logs --tail=50
+    docker compose --project-name "app_$NEW" logs --tail=50
     exit 1
   fi
   sleep 2
@@ -115,8 +115,8 @@ echo "  ✓ $NEW stack is healthy"
 # ─── Run migrations ────────────────────────────────────────────────────────────
 echo ""
 echo "[4/6] Running migrations ..."
-docker compose -p "app_$NEW" exec -T app php artisan migrate --force
-docker compose -p "app_$NEW" exec -T app php artisan optimize
+docker compose --project-name "app_$NEW" exec -T app php artisan migrate --force
+docker compose --project-name "app_$NEW" exec -T app php artisan optimize
 
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""
@@ -139,7 +139,7 @@ echo "[6/6] Stopping old $ACTIVE stack ..."
 OLD_DIR="$BASE_DIR/$ACTIVE"
 if [[ -d "$OLD_DIR" ]]; then
   docker compose \
-    -p "app_$ACTIVE" \
+    --project-name "app_$ACTIVE" \
     -f "$OLD_DIR/docker-compose.yml" \
     -f "$OLD_DIR/docker-compose.prod.yml" \
     -f "$OLD_DIR/docker-compose.$ACTIVE.yml" \

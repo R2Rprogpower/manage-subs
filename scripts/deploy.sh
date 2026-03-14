@@ -120,7 +120,12 @@ COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" \
 
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
-echo "[3/6] Waiting for $NEW stack on port $NEW_PORT ..."
+echo "[3/6] Installing PHP dependencies ..."
+COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --no-dev --prefer-dist --optimize-autoloader
+
+# ─── Wait for health ───────────────────────────────────────────────────────────
+echo ""
+echo "[4/6] Waiting for $NEW stack on port $NEW_PORT ..."
 ELAPSED=0
 until curl -sf "http://127.0.0.1:$NEW_PORT/api/health" > /dev/null 2>&1; do
   if [[ $ELAPSED -ge $HEALTH_TIMEOUT ]]; then
@@ -135,13 +140,13 @@ echo "  ✓ $NEW stack is healthy"
 
 # ─── Run migrations ────────────────────────────────────────────────────────────
 echo ""
-echo "[4/6] Running migrations ..."
+echo "[5/6] Running migrations ..."
 COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan migrate --force
 COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan optimize
 
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""
-echo "[5/6] Switching Caddy to port $NEW_PORT ..."
+echo "[6/6] Switching Caddy to port $NEW_PORT ..."
 cat > "$CADDY_FILE" <<EOF
 {
     email admin@example.com
@@ -156,7 +161,7 @@ echo "  ✓ Traffic now routed to $NEW (port $NEW_PORT)"
 
 # ─── Tear down old stack ───────────────────────────────────────────────────────
 echo ""
-echo "[6/6] Stopping old $ACTIVE stack ..."
+echo "[7/7] Stopping old $ACTIVE stack ..."
 OLD_DIR="$BASE_DIR/$ACTIVE"
 if [[ -d "$OLD_DIR" ]]; then
   COMPOSE_PROJECT_NAME="app_$ACTIVE" "${COMPOSE_BIN[@]}" \

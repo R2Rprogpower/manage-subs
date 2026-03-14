@@ -198,7 +198,17 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE
   DB_DATABASE="$TEST_DB_NAME" \
   DB_USERNAME="$DB_USERNAME_VALUE" \
   DB_PASSWORD="$DB_PASSWORD_VALUE" \
-  php artisan test --testsuite=Unit --testsuite=Feature
+  php artisan test --testsuite=Unit
+
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app env \
+  APP_ENV=testing \
+  DB_CONNECTION=pgsql \
+  DB_HOST=db \
+  DB_PORT=5432 \
+  DB_DATABASE="$TEST_DB_NAME" \
+  DB_USERNAME="$DB_USERNAME_VALUE" \
+  DB_PASSWORD="$DB_PASSWORD_VALUE" \
+  php artisan test --testsuite=Feature
 
 echo "[8/10] Cleaning isolated test database ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";'"

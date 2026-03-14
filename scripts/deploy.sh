@@ -17,6 +17,15 @@ PORT_GREEN=8082
 HEALTH_TIMEOUT=60     # seconds to wait for new stack to become healthy
 CADDY_FILE="/etc/caddy/Caddyfile"
 
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_BIN=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_BIN=(docker-compose)
+else
+  echo "ERROR: Neither 'docker compose' nor 'docker-compose' is available." >&2
+  exit 1
+fi
+
 # ─── Parse args ────────────────────────────────────────────────────────────────
 REPO=""
 BRANCH="main"
@@ -90,8 +99,7 @@ cp "$ENV_SOURCE" "$NEW_DIR/.env"
 echo ""
 echo "[2/6] Building and starting $NEW stack ..."
 cd "$NEW_DIR"
-docker compose \
-  --project-name "app_$NEW" \
+COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" \
   -f docker-compose.yml \
   -f docker-compose.prod.yml \
   -f "docker-compose.$NEW.yml" \
@@ -104,7 +112,7 @@ ELAPSED=0
 until curl -sf "http://127.0.0.1:$NEW_PORT/api/health" > /dev/null 2>&1; do
   if [[ $ELAPSED -ge $HEALTH_TIMEOUT ]]; then
     echo "ERROR: Health check timed out after ${HEALTH_TIMEOUT}s. Aborting." >&2
-    docker compose --project-name "app_$NEW" logs --tail=50
+    COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" logs --tail=50
     exit 1
   fi
   sleep 2
@@ -115,8 +123,8 @@ echo "  ✓ $NEW stack is healthy"
 # ─── Run migrations ────────────────────────────────────────────────────────────
 echo ""
 echo "[4/6] Running migrations ..."
-docker compose --project-name "app_$NEW" exec -T app php artisan migrate --force
-docker compose --project-name "app_$NEW" exec -T app php artisan optimize
+COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan migrate --force
+COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan optimize
 
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""
@@ -138,8 +146,7 @@ echo ""
 echo "[6/6] Stopping old $ACTIVE stack ..."
 OLD_DIR="$BASE_DIR/$ACTIVE"
 if [[ -d "$OLD_DIR" ]]; then
-  docker compose \
-    --project-name "app_$ACTIVE" \
+  COMPOSE_PROJECT_NAME="app_$ACTIVE" "${COMPOSE_BIN[@]}" \
     -f "$OLD_DIR/docker-compose.yml" \
     -f "$OLD_DIR/docker-compose.prod.yml" \
     -f "$OLD_DIR/docker-compose.$ACTIVE.yml" \

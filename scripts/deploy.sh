@@ -35,14 +35,12 @@ run_as_root() {
     exit 1
   fi
 
-  if ! sudo -n true >/dev/null 2>&1; then
+  if ! sudo -n "$@"; then
     echo "ERROR: passwordless sudo is required for non-interactive deploys (GitHub Actions)." >&2
-    echo "Grant NOPASSWD for deploy user on required commands, e.g.:" >&2
+    echo "Ensure deploy user has NOPASSWD for required commands, e.g.:" >&2
     echo "  /usr/bin/install, /usr/bin/systemctl, /usr/bin/caddy" >&2
     exit 1
   fi
-
-  sudo -n "$@"
 }
 
 if ! command -v flock >/dev/null 2>&1; then

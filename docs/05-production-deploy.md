@@ -99,10 +99,10 @@ bash scripts/deploy.sh --env /opt/app/.env
 
 `DEPLOY_WEBHOOK_URL` should be an incoming webhook endpoint that accepts JSON with a `text` field.
 
-Slack incoming webhook example:
+Slack incoming webhook format example:
 
 ```text
-https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+https://hooks.slack.com/services/<workspace>/<channel>/<webhook-token>
 ```
 
 If secret is not set, notifications are skipped.

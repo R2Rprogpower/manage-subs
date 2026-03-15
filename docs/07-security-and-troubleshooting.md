@@ -24,10 +24,24 @@
 
 ## Troubleshooting quick hits
 
-- `address already in use :80`: stop host LiteSpeed/Nginx/Apache.
+- `address already in use :80`: stop host LiteSpeed/Nginx/Apache (`sudo systemctl stop lsws && sudo systemctl disable lsws`).
 - `Cannot connect to Docker daemon`: start Docker and ensure deploy user is in docker group.
-- `MissingAppKeyException`: deploy script auto-generates APP_KEY in `/opt/app/.env` if empty.
+- `MissingAppKeyException`: deploy script auto-generates APP_KEY in `.env` if empty.
 - `File not found` on `/api/health`: pull latest deploy script and redeploy.
+- `Bind for 127.0.0.1:<port> failed: port is already allocated`: two apps are using the same host port. Set unique `BLUE_HTTP_PORT`, `GREEN_HTTP_PORT`, `BLUE_PGADMIN_PORT`, `GREEN_PGADMIN_PORT` per repo in GitHub Variables. See port map in `docs/08-template-repo-workflow.md`.
+- `sudo: a password is required` during deploy: add passwordless sudo for the deploy user. See `docs/05-production-deploy.md` for the sudoers entry.
+- Domain returns response from wrong app: check `/etc/caddy/conf.d/<app>.caddy` — the port must match the app's active color port. Run `curl http://127.0.0.1:<port>/api/health` directly on the VPS to verify which app is on which port.
+- Caddyfile not importing snippets: run `sudo cat /etc/caddy/Caddyfile` and confirm it contains `import /etc/caddy/conf.d/*.caddy`. If not, the next deploy will fix it, or write it manually:
+  ```bash
+  sudo tee /etc/caddy/Caddyfile > /dev/null <<'EOF'
+  {
+    email ops@example.com
+  }
+
+  import /etc/caddy/conf.d/*.caddy
+  EOF
+  sudo systemctl reload caddy
+  ```
 
 ## Relevant files
 

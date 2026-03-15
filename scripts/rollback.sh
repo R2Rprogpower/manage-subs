@@ -6,6 +6,8 @@ BASE_DIR="${DEPLOY_BASE_DIR:-/opt/app}"
 STATE_FILE="$BASE_DIR/.active"
 BASE_COMPOSE_FILE="docker-compose.deploy.yml"
 CADDY_FILE="/etc/caddy/Caddyfile"
+CADDY_CONF_DIR="/etc/caddy/conf.d"
+APP_NAME="${APP_NAME:-$(basename "$BASE_DIR")}"
 
 DOMAIN="${DOMAIN:-localhost}"
 PGADMIN_DOMAIN="${PGADMIN_DOMAIN:-pgadmin.${DOMAIN}}"
@@ -61,12 +63,11 @@ COMPOSE_PROJECT_NAME="app_$TARGET" "${COMPOSE_BIN[@]}" \
   -f "docker-compose.$TARGET.yml" \
   up -d --build --remove-orphans
 
+# Update only this app's per-app snippet; other apps' snippets are untouched.
+run_as_root mkdir -p "$CADDY_CONF_DIR"
+CADDY_APP_CONF="$CADDY_CONF_DIR/${APP_NAME}.caddy"
 CADDY_TMP_FILE="$(mktemp)"
 cat > "$CADDY_TMP_FILE" <<EOF
-{
-    email admin@example.com
-}
-
 ${DOMAIN} {
     reverse_proxy 127.0.0.1:${TARGET_HTTP_PORT}
 }
@@ -76,10 +77,10 @@ ${PGADMIN_DOMAIN} {
 }
 EOF
 
-if [[ -w "$CADDY_FILE" ]] || [[ ! -e "$CADDY_FILE" && -w "$(dirname "$CADDY_FILE")" ]]; then
-  install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
+if [[ -w "$CADDY_CONF_DIR" ]]; then
+  install -m 644 "$CADDY_TMP_FILE" "$CADDY_APP_CONF"
 else
-  run_as_root install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
+  run_as_root install -m 644 "$CADDY_TMP_FILE" "$CADDY_APP_CONF"
 fi
 rm -f "$CADDY_TMP_FILE"
 

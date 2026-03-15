@@ -8,7 +8,13 @@
 set -euo pipefail
 
 # ─── Config ────────────────────────────────────────────────────────────────────
-BASE_DIR="${DEPLOY_BASE_DIR:-/opt/app}"
+DEFAULT_BASE_DIR="/opt/app"
+SCRIPT_PARENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ "$(basename "$SCRIPT_PARENT_DIR")" == "setup" ]]; then
+  DEFAULT_BASE_DIR="$(dirname "$SCRIPT_PARENT_DIR")"
+fi
+
+BASE_DIR="${DEPLOY_BASE_DIR:-$DEFAULT_BASE_DIR}"
 STATE_FILE="$BASE_DIR/.active"
 CONFIG_FILE="$BASE_DIR/config"
 ENV_SOURCE="$BASE_DIR/.env"
@@ -25,6 +31,11 @@ APP_UID="$(id -u)"
 APP_GID="$(id -g)"
 TEST_DB_NAME="${DEPLOY_TEST_DB_NAME:-app_deploy_test}"
 LOCK_FILE="$BASE_DIR/.deploy.lock"
+APP_SLUG="$(printf '%s' "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '_')"
+
+if [[ -z "$APP_SLUG" ]]; then
+  APP_SLUG="app"
+fi
 
 is_valid_domain() {
   local value="$1"
@@ -224,7 +235,7 @@ if [[ ! -f "$BASE_COMPOSE_FILE" ]]; then
   exit 1
 fi
 
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" \
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" \
   -f "$BASE_COMPOSE_FILE" \
   -f "docker-compose.$NEW.yml" \
   up -d --build --remove-orphans
@@ -232,7 +243,7 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
 echo "[3/10] Installing PHP dependencies (with dev for test gate) ..."
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --prefer-dist --optimize-autoloader
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --prefer-dist --optimize-autoloader
 
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
@@ -241,7 +252,7 @@ ELAPSED=0
 until curl -sf "http://127.0.0.1:$NEW_PORT/api/health" > /dev/null 2>&1; do
   if [[ $ELAPSED -ge $HEALTH_TIMEOUT ]]; then
     echo "ERROR: Health check timed out after ${HEALTH_TIMEOUT}s. Aborting." >&2
-    APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" logs --tail=50
+    APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" logs --tail=50
     exit 1
   fi
   sleep 2
@@ -252,16 +263,16 @@ echo "  ✓ $NEW stack is healthy"
 # ─── Run migrations ────────────────────────────────────────────────────────────
 echo ""
 echo "[5/10] Running migrations ..."
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan migrate --force
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan optimize
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan migrate --force
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan optimize
 
 # ─── Run tests on isolated DB ─────────────────────────────────────────────────
 echo ""
 echo "[6/10] Creating isolated test database ($TEST_DB_NAME) ..."
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";' -c 'CREATE DATABASE \"$TEST_DB_NAME\";'"
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";' -c 'CREATE DATABASE \"$TEST_DB_NAME\";'"
 
 echo "[7/10] Running test suite against isolated database ..."
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app env \
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app env \
   APP_ENV=testing \
   DB_CONNECTION=pgsql \
   DB_HOST=db \
@@ -271,7 +282,7 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE
   DB_PASSWORD="$DB_PASSWORD_VALUE" \
   php artisan test --testsuite=Unit
 
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app env \
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app env \
   APP_ENV=testing \
   DB_CONNECTION=pgsql \
   DB_HOST=db \
@@ -282,10 +293,10 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE
   php artisan test --testsuite=Feature
 
 echo "[8/10] Cleaning isolated test database ..."
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";'"
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";'"
 
 echo "[8/10] Pruning dev dependencies for production runtime ..."
-APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --no-dev --prefer-dist --optimize-autoloader
+APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --no-dev --prefer-dist --optimize-autoloader
 
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""
@@ -354,7 +365,7 @@ echo ""
 echo "[10/10] Stopping old $ACTIVE stack ..."
 OLD_DIR="$BASE_DIR/$ACTIVE"
 if [[ -d "$OLD_DIR" ]]; then
-  APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$ACTIVE" "${COMPOSE_BIN[@]}" \
+  APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$ACTIVE" "${COMPOSE_BIN[@]}" \
     -f "$OLD_DIR/$BASE_COMPOSE_FILE" \
     -f "$OLD_DIR/docker-compose.$ACTIVE.yml" \
     down --remove-orphans || true

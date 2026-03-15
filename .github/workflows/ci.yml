@@ -88,8 +88,11 @@ jobs:
             : "${ACME_EMAIL:?Missing ACME_EMAIL (set as variable or secret)}"
             : "${REPO_URL:?REPO_URL could not be resolved}"
 
+            DEPLOY_BASE_DIR="$(dirname "$DEPLOY_SETUP_DIR")"
+
             cd "$DEPLOY_SETUP_DIR"
             git pull origin main
+            DEPLOY_BASE_DIR="$DEPLOY_BASE_DIR" \
             DOMAIN="$APP_DOMAIN" \
             PGADMIN_DOMAIN="$PGADMIN_DOMAIN" \
             ACME_EMAIL="$ACME_EMAIL" \

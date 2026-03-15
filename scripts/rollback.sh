@@ -2,12 +2,23 @@
 
 set -euo pipefail
 
-BASE_DIR="${DEPLOY_BASE_DIR:-/opt/app}"
+DEFAULT_BASE_DIR="/opt/app"
+SCRIPT_PARENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ "$(basename "$SCRIPT_PARENT_DIR")" == "setup" ]]; then
+  DEFAULT_BASE_DIR="$(dirname "$SCRIPT_PARENT_DIR")"
+fi
+
+BASE_DIR="${DEPLOY_BASE_DIR:-$DEFAULT_BASE_DIR}"
 STATE_FILE="$BASE_DIR/.active"
 BASE_COMPOSE_FILE="docker-compose.deploy.yml"
 CADDY_FILE="/etc/caddy/Caddyfile"
 CADDY_CONF_DIR="/etc/caddy/conf.d"
 APP_NAME="${APP_NAME:-$(basename "$BASE_DIR")}"
+APP_SLUG="$(printf '%s' "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '_')"
+
+if [[ -z "$APP_SLUG" ]]; then
+  APP_SLUG="app"
+fi
 
 DOMAIN="${DOMAIN:-localhost}"
 PGADMIN_DOMAIN="${PGADMIN_DOMAIN:-pgadmin.${DOMAIN}}"
@@ -58,7 +69,7 @@ fi
 echo "Rolling back from $ACTIVE to $TARGET ..."
 
 cd "$TARGET_DIR"
-COMPOSE_PROJECT_NAME="app_$TARGET" "${COMPOSE_BIN[@]}" \
+COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$TARGET" "${COMPOSE_BIN[@]}" \
   -f "$BASE_COMPOSE_FILE" \
   -f "docker-compose.$TARGET.yml" \
   up -d --build --remove-orphans

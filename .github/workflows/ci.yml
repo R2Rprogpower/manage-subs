@@ -54,6 +54,10 @@ jobs:
       APP_DOMAIN: ${{ vars.APP_DOMAIN || secrets.APP_DOMAIN }}
       PGADMIN_DOMAIN: ${{ vars.PGADMIN_DOMAIN || secrets.PGADMIN_DOMAIN }}
       ACME_EMAIL: ${{ vars.ACME_EMAIL || secrets.ACME_EMAIL }}
+      BLUE_HTTP_PORT: ${{ vars.BLUE_HTTP_PORT || secrets.BLUE_HTTP_PORT }}
+      GREEN_HTTP_PORT: ${{ vars.GREEN_HTTP_PORT || secrets.GREEN_HTTP_PORT }}
+      BLUE_PGADMIN_PORT: ${{ vars.BLUE_PGADMIN_PORT || secrets.BLUE_PGADMIN_PORT }}
+      GREEN_PGADMIN_PORT: ${{ vars.GREEN_PGADMIN_PORT || secrets.GREEN_PGADMIN_PORT }}
       REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
       BRANCH: ${{ github.ref_name }}
 
@@ -65,7 +69,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script_stop: true
-          envs: DEPLOY_SETUP_DIR,DEPLOY_ENV_FILE,APP_DOMAIN,PGADMIN_DOMAIN,ACME_EMAIL,REPO_URL,BRANCH
+          envs: DEPLOY_SETUP_DIR,DEPLOY_ENV_FILE,APP_DOMAIN,PGADMIN_DOMAIN,ACME_EMAIL,BLUE_HTTP_PORT,GREEN_HTTP_PORT,BLUE_PGADMIN_PORT,GREEN_PGADMIN_PORT,REPO_URL,BRANCH
           script: |
             set -e
 
@@ -78,6 +82,10 @@ jobs:
             APP_DOMAIN="$(sanitize_value "${APP_DOMAIN:-}")"
             PGADMIN_DOMAIN="$(sanitize_value "${PGADMIN_DOMAIN:-}")"
             ACME_EMAIL="$(sanitize_value "${ACME_EMAIL:-}")"
+            BLUE_HTTP_PORT="$(sanitize_value "${BLUE_HTTP_PORT:-}")"
+            GREEN_HTTP_PORT="$(sanitize_value "${GREEN_HTTP_PORT:-}")"
+            BLUE_PGADMIN_PORT="$(sanitize_value "${BLUE_PGADMIN_PORT:-}")"
+            GREEN_PGADMIN_PORT="$(sanitize_value "${GREEN_PGADMIN_PORT:-}")"
             REPO_URL="$(sanitize_value "${REPO_URL:-}")"
             BRANCH="$(sanitize_value "${BRANCH:-main}")"
 
@@ -96,6 +104,10 @@ jobs:
             DOMAIN="$APP_DOMAIN" \
             PGADMIN_DOMAIN="$PGADMIN_DOMAIN" \
             ACME_EMAIL="$ACME_EMAIL" \
+            BLUE_HTTP_PORT="$BLUE_HTTP_PORT" \
+            GREEN_HTTP_PORT="$GREEN_HTTP_PORT" \
+            BLUE_PGADMIN_PORT="$BLUE_PGADMIN_PORT" \
+            GREEN_PGADMIN_PORT="$GREEN_PGADMIN_PORT" \
             bash scripts/deploy.sh \
               --repo "$REPO_URL" \
               --branch "$BRANCH" \

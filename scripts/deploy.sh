@@ -18,6 +18,8 @@ PORT_PGADMIN_BLUE="${BLUE_PGADMIN_PORT:-15050}"
 PORT_PGADMIN_GREEN="${GREEN_PGADMIN_PORT:-15051}"
 HEALTH_TIMEOUT=60     # seconds to wait for new stack to become healthy
 CADDY_FILE="/etc/caddy/Caddyfile"
+CADDY_CONF_DIR="/etc/caddy/conf.d"
+APP_NAME="${APP_NAME:-$(basename "$BASE_DIR")}"   # used to name the per-app snippet
 BASE_COMPOSE_FILE="docker-compose.deploy.yml"
 APP_UID="$(id -u)"
 APP_GID="$(id -g)"
@@ -288,27 +290,48 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_$NEW" "${COMPOSE
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""
 echo "[9/10] Switching Caddy to port $NEW_PORT ..."
-CADDY_TMP_FILE="$(mktemp)"
-cat > "$CADDY_TMP_FILE" <<EOF
+
+# Ensure per-app conf.d directory exists
+run_as_root mkdir -p "$CADDY_CONF_DIR"
+
+# Write (or update) main Caddyfile with global block + import, only if it does
+# not already contain the import directive so we don't clobber other apps.
+if ! grep -q "import.*conf\.d" "$CADDY_FILE" 2>/dev/null; then
+  CADDY_TMP_FILE="$(mktemp)"
+  cat > "$CADDY_TMP_FILE" <<EOF
 {
   email ${ACME_EMAIL}
 }
 
+import ${CADDY_CONF_DIR}/*.caddy
+EOF
+  if [[ -w "$CADDY_FILE" ]] || [[ ! -e "$CADDY_FILE" && -w "$(dirname "$CADDY_FILE")" ]]; then
+    install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
+  else
+    run_as_root install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
+  fi
+  rm -f "$CADDY_TMP_FILE"
+fi
+
+# Write ONLY this app's two site blocks to its own snippet file.
+# Other apps' snippet files are left untouched.
+CADDY_APP_CONF="$CADDY_CONF_DIR/${APP_NAME}.caddy"
+CADDY_TMP_FILE="$(mktemp)"
+cat > "$CADDY_TMP_FILE" <<EOF
 ${DOMAIN} {
     reverse_proxy 127.0.0.1:${NEW_PORT}
 }
 
 ${PGADMIN_DOMAIN} {
-  reverse_proxy 127.0.0.1:${NEW_PGADMIN_PORT}
+    reverse_proxy 127.0.0.1:${NEW_PGADMIN_PORT}
 }
 EOF
 
-if [[ -w "$CADDY_FILE" ]] || [[ ! -e "$CADDY_FILE" && -w "$(dirname "$CADDY_FILE")" ]]; then
-  install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
+if [[ -w "$CADDY_CONF_DIR" ]]; then
+  install -m 644 "$CADDY_TMP_FILE" "$CADDY_APP_CONF"
 else
-  run_as_root install -m 644 "$CADDY_TMP_FILE" "$CADDY_FILE"
+  run_as_root install -m 644 "$CADDY_TMP_FILE" "$CADDY_APP_CONF"
 fi
-
 rm -f "$CADDY_TMP_FILE"
 
 if command -v caddy >/dev/null 2>&1; then

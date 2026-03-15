@@ -54,6 +54,8 @@ jobs:
       APP_DOMAIN: ${{ vars.APP_DOMAIN || secrets.APP_DOMAIN }}
       PGADMIN_DOMAIN: ${{ vars.PGADMIN_DOMAIN || secrets.PGADMIN_DOMAIN }}
       ACME_EMAIL: ${{ vars.ACME_EMAIL || secrets.ACME_EMAIL }}
+      REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+      BRANCH: ${{ github.ref_name }}
 
     steps:
       - name: Deploy to VPS over SSH
@@ -63,7 +65,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script_stop: true
-          envs: DEPLOY_SETUP_DIR,DEPLOY_ENV_FILE,APP_DOMAIN,PGADMIN_DOMAIN,ACME_EMAIL
+          envs: DEPLOY_SETUP_DIR,DEPLOY_ENV_FILE,APP_DOMAIN,PGADMIN_DOMAIN,ACME_EMAIL,REPO_URL,BRANCH
           script: |
             set -e
 
@@ -76,19 +78,25 @@ jobs:
             APP_DOMAIN="$(sanitize_value "${APP_DOMAIN:-}")"
             PGADMIN_DOMAIN="$(sanitize_value "${PGADMIN_DOMAIN:-}")"
             ACME_EMAIL="$(sanitize_value "${ACME_EMAIL:-}")"
+            REPO_URL="$(sanitize_value "${REPO_URL:-}")"
+            BRANCH="$(sanitize_value "${BRANCH:-main}")"
 
             : "${DEPLOY_SETUP_DIR:?Missing DEPLOY_SETUP_DIR (set as variable or secret)}"
             : "${DEPLOY_ENV_FILE:?Missing DEPLOY_ENV_FILE (set as variable or secret)}"
             : "${APP_DOMAIN:?Missing APP_DOMAIN (set as variable or secret)}"
             : "${PGADMIN_DOMAIN:?Missing PGADMIN_DOMAIN (set as variable or secret)}"
             : "${ACME_EMAIL:?Missing ACME_EMAIL (set as variable or secret)}"
+            : "${REPO_URL:?REPO_URL could not be resolved}"
 
             cd "$DEPLOY_SETUP_DIR"
             git pull origin main
             DOMAIN="$APP_DOMAIN" \
             PGADMIN_DOMAIN="$PGADMIN_DOMAIN" \
             ACME_EMAIL="$ACME_EMAIL" \
-            bash scripts/deploy.sh --env "$DEPLOY_ENV_FILE"
+            bash scripts/deploy.sh \
+              --repo "$REPO_URL" \
+              --branch "$BRANCH" \
+              --env "$DEPLOY_ENV_FILE"
 
       - name: Notify deploy success
         if: success()

@@ -34,3 +34,8 @@ Recommended flow:
 3. Setup MFA
 4. Verify MFA
 5. Login (With MFA)
+
+The collection also includes docs endpoints:
+
+- `GET /docs/api`
+- `GET /docs/api.json`

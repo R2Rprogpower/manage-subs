@@ -97,7 +97,7 @@ git push -u origin main
    - `DEPLOY_WEBHOOK_URL` (optional)
 4. Edit `.github/workflows/ci.yml` in new repo:
    - `DEPLOY_SETUP_DIR=/opt/my-new-app/setup`
-  - `DEPLOY_ENV_FILE=/opt/my-new-app/.env`
+   - `DEPLOY_ENV_FILE=/opt/my-new-app/.env`
    - `APP_DOMAIN=api.my-new-app.com`
    - `PGADMIN_DOMAIN=pgadmin.my-new-app.com`
   - `ACME_EMAIL=ops@my-new-app.com`

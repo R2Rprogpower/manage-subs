@@ -49,11 +49,11 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
-      DEPLOY_SETUP_DIR: ${{ vars.DEPLOY_SETUP_DIR }}
-      DEPLOY_ENV_FILE: ${{ vars.DEPLOY_ENV_FILE }}
-      APP_DOMAIN: ${{ vars.APP_DOMAIN }}
-      PGADMIN_DOMAIN: ${{ vars.PGADMIN_DOMAIN }}
-      ACME_EMAIL: ${{ vars.ACME_EMAIL }}
+      DEPLOY_SETUP_DIR: ${{ vars.DEPLOY_SETUP_DIR || secrets.DEPLOY_SETUP_DIR }}
+      DEPLOY_ENV_FILE: ${{ vars.DEPLOY_ENV_FILE || secrets.DEPLOY_ENV_FILE }}
+      APP_DOMAIN: ${{ vars.APP_DOMAIN || secrets.APP_DOMAIN }}
+      PGADMIN_DOMAIN: ${{ vars.PGADMIN_DOMAIN || secrets.PGADMIN_DOMAIN }}
+      ACME_EMAIL: ${{ vars.ACME_EMAIL || secrets.ACME_EMAIL }}
 
     steps:
       - name: Deploy to VPS over SSH
@@ -67,11 +67,21 @@ jobs:
           script: |
             set -e
 
-            : "${DEPLOY_SETUP_DIR:?Missing repository variable DEPLOY_SETUP_DIR}"
-            : "${DEPLOY_ENV_FILE:?Missing repository variable DEPLOY_ENV_FILE}"
-            : "${APP_DOMAIN:?Missing repository variable APP_DOMAIN}"
-            : "${PGADMIN_DOMAIN:?Missing repository variable PGADMIN_DOMAIN}"
-            : "${ACME_EMAIL:?Missing repository variable ACME_EMAIL}"
+            sanitize_value() {
+              printf '%s' "$1" | tr -d '\r\n'
+            }
+
+            DEPLOY_SETUP_DIR="$(sanitize_value "${DEPLOY_SETUP_DIR:-}")"
+            DEPLOY_ENV_FILE="$(sanitize_value "${DEPLOY_ENV_FILE:-}")"
+            APP_DOMAIN="$(sanitize_value "${APP_DOMAIN:-}")"
+            PGADMIN_DOMAIN="$(sanitize_value "${PGADMIN_DOMAIN:-}")"
+            ACME_EMAIL="$(sanitize_value "${ACME_EMAIL:-}")"
+
+            : "${DEPLOY_SETUP_DIR:?Missing DEPLOY_SETUP_DIR (set as variable or secret)}"
+            : "${DEPLOY_ENV_FILE:?Missing DEPLOY_ENV_FILE (set as variable or secret)}"
+            : "${APP_DOMAIN:?Missing APP_DOMAIN (set as variable or secret)}"
+            : "${PGADMIN_DOMAIN:?Missing PGADMIN_DOMAIN (set as variable or secret)}"
+            : "${ACME_EMAIL:?Missing ACME_EMAIL (set as variable or secret)}"
 
             cd "$DEPLOY_SETUP_DIR"
             git pull origin main

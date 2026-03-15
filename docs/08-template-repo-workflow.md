@@ -9,15 +9,26 @@ Base template repository:
 ## Recommended model
 
 - Keep this repository as your foundation template.
-- Create a new repo from it for each app (`app-a`, `app-b`, etc.).
-- Deploy each app to its own VPS path and domains.
+- Create a new repo from it for each app (e.g. `craftChronicles`, `my-new-app`).
+- Deploy each app to its own VPS path, using unique loopback ports.
+- Multiple apps can live on the same VPS — Caddy and Docker are fully isolated per app.
+
+## Port allocation map
+
+Each app needs 4 unique loopback ports. Never reuse ports across apps on the same VPS.
+
+| App | `BLUE_HTTP_PORT` | `GREEN_HTTP_PORT` | `BLUE_PGADMIN_PORT` | `GREEN_PGADMIN_PORT` |
+|---|---|---|---|---|
+| guzleaks | 18083 | 18084 | 15052 | 15053 |
+| craftChronicles | 18085 | 18086 | 15054 | 15055 |
+| next app | 18087 | 18088 | 15056 | 15057 |
 
 ## 1) Create a new app repo from this base
 
 Option A (GitHub UI):
 
 - Click **Use this template** on the base repository.
-- Create new repository (for example `my-new-app`).
+- Create new repository (e.g. `my-new-app`).
 
 Option B (manual clone + new remote):
 
@@ -29,27 +40,36 @@ git remote add origin https://github.com/R2Rprogpower/my-new-app.git
 git push -u origin main
 ```
 
-## 2) Configure CI/CD in the new repo
+## 2) Configure CI/CD for the new repo
 
-Set these GitHub **Secrets**:
+Do **not** edit `.github/workflows/ci.yml`. All per-app values are read from GitHub **Repository Variables** automatically.
 
-- `VPS_HOST`
-- `VPS_USER`
-- `VPS_SSH_KEY`
-- `DEPLOY_WEBHOOK_URL` (optional)
+### GitHub Secrets (shared between repos if same VPS)
 
-Important:
+| Secret | Value |
+|---|---|
+| `VPS_HOST` | VPS public IP |
+| `VPS_USER` | SSH user (e.g. `deploy`) |
+| `VPS_SSH_KEY` | Private key content |
+| `DEPLOY_WEBHOOK_URL` | Optional |
 
-- Secrets do not copy automatically between repositories unless you use org-level secrets.
-- Use the same values as your current working repo if you want to deploy to the same VPS.
+### GitHub Repository Variables (unique per repo)
 
-Update deploy env values in `.github/workflows/ci.yml` (`deploy` job `env`):
+Set under `Settings → Secrets and variables → Actions → Variables`:
 
-- `DEPLOY_SETUP_DIR` (example: `/opt/my-new-app/setup`)
-- `DEPLOY_ENV_FILE` (example: `/opt/my-new-app/.env`)
-- `APP_DOMAIN` (example: `api.my-new-app.com`)
-- `PGADMIN_DOMAIN` (example: `pgadmin.my-new-app.com`)
-- `ACME_EMAIL` (example: `ops@my-new-app.com`)
+| Variable | Example value |
+|---|---|
+| `DEPLOY_SETUP_DIR` | `/opt/my-new-app/setup` |
+| `DEPLOY_ENV_FILE` | `/opt/my-new-app/.env` |
+| `APP_DOMAIN` | `api.my-new-app.com` |
+| `PGADMIN_DOMAIN` | `pgadmin.my-new-app.com` |
+| `ACME_EMAIL` | `ops@my-new-app.com` |
+| `BLUE_HTTP_PORT` | (next free block, see port map above) |
+| `GREEN_HTTP_PORT` | |
+| `BLUE_PGADMIN_PORT` | |
+| `GREEN_PGADMIN_PORT` | |
+
+⚠️ **Port variables are mandatory on a shared VPS.** If not set, the deploy falls back to defaults (`18081–18082`, `15050–15051`) which will collide with other apps.
 
 ## 3) Prepare VPS directories for the new app
 
@@ -57,83 +77,78 @@ Update deploy env values in `.github/workflows/ci.yml` (`deploy` job `env`):
 sudo mkdir -p /opt/my-new-app
 sudo chown $USER:$USER /opt/my-new-app
 
-git clone https://github.com/<you>/my-new-app.git /opt/my-new-app/setup
-cp /opt/my-new-app/setup/.env.example /opt/my-new-app/.env
-```
-
-Replace repository URL in the command above with:
-
-- `https://github.com/R2Rprogpower/my-new-app.git`
-
-Then deploy from the setup directory:
-
-```bash
-cd /opt/my-new-app/setup
-DOMAIN=api.my-new-app.com \
-PGADMIN_DOMAIN=pgadmin.my-new-app.com \
-bash scripts/deploy.sh \
-  --repo https://github.com/R2Rprogpower/my-new-app.git \
-  --branch main \
-  --env /opt/my-new-app/.env
-```
-
-## 6) Exact checklist (copy/paste order)
-
-1. Create a new repository in GitHub (for example `my-new-app`) under `R2Rprogpower`.
-2. Run locally:
-
-```bash
-git clone https://github.com/R2Rprogpower/guzleaks.git my-new-app
-cd my-new-app
-git remote remove origin
-git remote add origin https://github.com/R2Rprogpower/my-new-app.git
-git push -u origin main
-```
-
-3. In new repo GitHub settings, add secrets with same values as current repo:
-   - `VPS_HOST`
-   - `VPS_USER`
-   - `VPS_SSH_KEY`
-   - `DEPLOY_WEBHOOK_URL` (optional)
-4. Edit `.github/workflows/ci.yml` in new repo:
-   - `DEPLOY_SETUP_DIR=/opt/my-new-app/setup`
-   - `DEPLOY_ENV_FILE=/opt/my-new-app/.env`
-   - `APP_DOMAIN=api.my-new-app.com`
-   - `PGADMIN_DOMAIN=pgadmin.my-new-app.com`
-  - `ACME_EMAIL=ops@my-new-app.com`
-5. On VPS:
-
-```bash
-sudo mkdir -p /opt/my-new-app
-sudo chown $USER:$USER /opt/my-new-app
 git clone https://github.com/R2Rprogpower/my-new-app.git /opt/my-new-app/setup
 cp /opt/my-new-app/setup/.env.example /opt/my-new-app/.env
+# Edit /opt/my-new-app/.env with production values
 ```
 
-6. Set production values in `/opt/my-new-app/.env` (DB passwords, app URL, pgAdmin credentials).
-7. First deploy on VPS:
+First deploy (run once manually to bootstrap):
 
 ```bash
 cd /opt/my-new-app/setup
+DEPLOY_BASE_DIR=/opt/my-new-app \
 DOMAIN=api.my-new-app.com \
 PGADMIN_DOMAIN=pgadmin.my-new-app.com \
+ACME_EMAIL=ops@my-new-app.com \
+BLUE_HTTP_PORT=18087 \
+GREEN_HTTP_PORT=18088 \
+BLUE_PGADMIN_PORT=15056 \
+GREEN_PGADMIN_PORT=15057 \
 bash scripts/deploy.sh \
   --repo https://github.com/R2Rprogpower/my-new-app.git \
   --branch main \
   --env /opt/my-new-app/.env
 ```
 
-8. After first deploy, future deploys happen automatically on push to `main` in `my-new-app`.
+After the first deploy, all subsequent deploys run automatically via GitHub Actions on push to `main`.
 
-## 4) Keep base and app changes separated
+## 4) How multi-app Caddy isolation works
 
-- Base improvements: land first in template repo, then cherry-pick/rebase into app repos.
-- App features: keep only in that app repo.
-- Avoid editing hardcoded app names/domains in shared scripts.
+- The global Caddyfile (`/etc/caddy/Caddyfile`) contains only:
+  ```
+  {
+    email ops@example.com
+  }
 
-## 5) Per-app isolation checklist
+  import /etc/caddy/conf.d/*.caddy
+  ```
+- Each app's deploy writes only its own snippet to `/etc/caddy/conf.d/<APP_NAME>.caddy`.
+- Other apps' snippets are never touched during a deploy or rollback.
+- `APP_NAME` = `basename` of `DEPLOY_BASE_DIR` (auto-derived, no config needed).
 
-- Unique VPS base directory (`/opt/<app-name>`)
-- Unique domains (`APP_DOMAIN`, `PGADMIN_DOMAIN`)
-- Unique `.env` secrets and DB passwords
-- Separate GitHub repo secrets
+## 5) Exact checklist (copy/paste order)
+
+1. Create new GitHub repo under `R2Rprogpower` (e.g. `my-new-app`).
+2. Clone locally and push:
+   ```bash
+   git clone https://github.com/R2Rprogpower/guzleaks.git my-new-app
+   cd my-new-app
+   git remote remove origin
+   git remote add origin https://github.com/R2Rprogpower/my-new-app.git
+   git push -u origin main
+   ```
+3. In new repo settings, add **Secrets**: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` (same values as existing repo if same VPS).
+4. In new repo settings, add **Variables** (all unique to this app — see tables above).
+5. On VPS:
+   ```bash
+   sudo mkdir -p /opt/my-new-app && sudo chown $USER:$USER /opt/my-new-app
+   git clone https://github.com/R2Rprogpower/my-new-app.git /opt/my-new-app/setup
+   cp /opt/my-new-app/setup/.env.example /opt/my-new-app/.env
+   # Edit /opt/my-new-app/.env with production values
+   ```
+6. Run first manual deploy (command in section 3 above).
+7. Push any commit to `main` in new repo to verify CI auto-deploy works end to end.
+
+## 6) Keep base and app changes separated
+
+- Base improvements: land first in template repo (`guzleaks`), then cherry-pick or merge into app repos.
+- App-specific features: keep only in that app repo.
+- Never hardcode app names, domains, or ports in shared scripts — use env vars.
+
+## 7) Per-app isolation checklist
+
+- [ ] Unique VPS base directory (`/opt/<app-name>`)
+- [ ] Unique domains (`APP_DOMAIN`, `PGADMIN_DOMAIN`)
+- [ ] Unique port block (all four port variables)
+- [ ] Unique `.env` (DB passwords, APP_KEY, app URL)
+- [ ] Separate GitHub repo with its own Variables set

@@ -1,0 +1,52 @@
+user_identities
+- id
+- user_id FK -> users.id
+- provider          -- telegram
+- provider_user_id  -- telegram user id
+- username NULL
+- meta JSON NULL
+- created_at
+- updated_at
+
+UNIQUE(provider, provider_user_id)
+
+
+plans
+- id
+- code              -- trial_7_days, monthly, yearly, free
+- name
+- price_minor       -- 0 for free/trial
+- currency
+- duration_days     -- 7, 30, 365, NULL(for unlimited free if needed)
+- is_active
+- created_at
+- updated_at
+
+subscriptions
+- id
+- user_id FK -> users.id
+- plan_id FK -> plans.id
+- status              -- active, expired, cancelled
+- started_at
+- ends_at NULL        -- NULL if unlimited free access
+- auto_renew          -- bool
+- trial_used          -- bool
+- source              -- bot, admin, manual
+- created_at
+- updated_at
+
+INDEX(user_id, status)
+
+
+
+payments
+- id
+- subscription_id FK -> subscriptions.id
+- provider              -- telegram_stars, manual, stripe, etc
+- provider_payment_id NULL
+- status                -- pending, paid, failed
+- amount_minor
+- currency
+- paid_at NULL
+- created_at
+- updated_at

@@ -6,6 +6,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -69,5 +70,21 @@ class User extends Authenticatable
             'mfa_secret' => 'encrypted',
             'mfa_recovery_codes' => 'encrypted:array',
         ];
+    }
+
+    /**
+     * @return HasMany<UserIdentity, $this>
+     */
+    public function userIdentities(): HasMany
+    {
+        return $this->hasMany(UserIdentity::class);
+    }
+
+    /**
+     * @return HasMany<Subscription, $this>
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
     }
 }

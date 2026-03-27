@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Modules\Subscriptions\Contracts\Repositories\SubscriptionRepositoryInterface;
 use App\Modules\Subscriptions\DTO\CreateSubscriptionDTO;
 use App\Modules\Subscriptions\DTO\UpdateSubscriptionDTO;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 class SubscriptionRepository implements SubscriptionRepositoryInterface
@@ -47,5 +48,47 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
     public function delete(Subscription $subscription): bool
     {
         return $subscription->delete();
+    }
+
+    public function findActiveByUserId(int $userId, ?DateTimeInterface $at = null): ?Subscription
+    {
+        $moment = $at?->format('Y-m-d H:i:s') ?? now()->toDateTimeString();
+
+        /** @var Subscription|null */
+        return Subscription::query()
+            ->where('user_id', $userId)
+            ->where('status', 'active')
+            ->where(function ($query) use ($moment): void {
+                $query->whereNull('ends_at')
+                    ->orWhere('ends_at', '>', $moment);
+            })
+            ->orderByDesc('started_at')
+            ->first();
+    }
+
+    /**
+     * @return Collection<int, Subscription>
+     */
+    public function findLapsedActive(?DateTimeInterface $at = null): Collection
+    {
+        $moment = $at?->format('Y-m-d H:i:s') ?? now()->toDateTimeString();
+
+        return Subscription::query()
+            ->where('status', 'active')
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '<=', $moment)
+            ->get();
+    }
+
+    /**
+     * @return Collection<int, Subscription>
+     */
+    public function findByUserId(int $userId): Collection
+    {
+        return Subscription::query()
+            ->with(['user', 'plan', 'payments'])
+            ->where('user_id', $userId)
+            ->orderByDesc('started_at')
+            ->get();
     }
 }

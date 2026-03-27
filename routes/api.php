@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', static function (): \Illuminate\Http\JsonResponse {
     DB::connection()->getPdo(); // throws if DB is unreachable
 
-    return response()->json(['status' => 'ok !!! FUNDAMENT']);
+    return response()->json(['status' => 'ok !!! manage subs']);
 });
 
 require base_path('app/Modules/Auth/api.php');

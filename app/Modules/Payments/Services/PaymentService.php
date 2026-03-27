@@ -9,13 +9,15 @@ use App\Modules\Payments\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Modules\Payments\Contracts\Services\PaymentServiceInterface;
 use App\Modules\Payments\DTO\CreatePaymentDTO;
 use App\Modules\Payments\DTO\UpdatePaymentDTO;
+use App\Modules\Subscriptions\Contracts\Services\SubscriptionServiceInterface;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 class PaymentService implements PaymentServiceInterface
 {
     public function __construct(
-        private readonly PaymentRepositoryInterface $paymentRepository
+        private readonly PaymentRepositoryInterface $paymentRepository,
+        private readonly SubscriptionServiceInterface $subscriptionService
     ) {}
 
     /**
@@ -62,16 +64,61 @@ class PaymentService implements PaymentServiceInterface
 
     public function markPaid(int $paymentId, ?DateTimeInterface $paidAt = null, ?int $actorId = null): Payment
     {
-        throw new \BadMethodCallException('markPaid is not implemented yet.');
+        $payment = $this->paymentRepository->findById($paymentId);
+        if (! $payment) {
+            throw new \InvalidArgumentException("Payment with ID {$paymentId} not found.");
+        }
+
+        $effectivePaidAt = $paidAt ?? now();
+        $this->paymentRepository->update($payment, new UpdatePaymentDTO([
+            'status' => 'paid',
+            'paid_at' => $effectivePaidAt->format('Y-m-d H:i:s'),
+        ]));
+
+        $payment->refresh();
+        $payment->load(['subscription.user', 'subscription.plan']);
+
+        return $payment;
     }
 
     public function markFailed(int $paymentId, ?int $actorId = null): Payment
     {
-        throw new \BadMethodCallException('markFailed is not implemented yet.');
+        $payment = $this->paymentRepository->findById($paymentId);
+        if (! $payment) {
+            throw new \InvalidArgumentException("Payment with ID {$paymentId} not found.");
+        }
+
+        $this->paymentRepository->update($payment, new UpdatePaymentDTO([
+            'status' => 'failed',
+            'paid_at' => null,
+        ]));
+
+        $payment->refresh();
+        $payment->load(['subscription.user', 'subscription.plan']);
+
+        return $payment;
     }
 
     public function onPaymentStateChanged(int $paymentId, ?int $actorId = null): void
     {
-        throw new \BadMethodCallException('onPaymentStateChanged is not implemented yet.');
+        $payment = $this->paymentRepository->findById($paymentId);
+        if (! $payment) {
+            throw new \InvalidArgumentException("Payment with ID {$paymentId} not found.");
+        }
+
+        if (! $payment->subscription) {
+            return;
+        }
+
+        if ($payment->status === 'paid') {
+            $this->subscriptionService->activateSubscription($payment->subscription_id, $actorId);
+            $this->subscriptionService->syncChannelAccessForUser($payment->subscription->user_id);
+
+            return;
+        }
+
+        if ($payment->status === 'failed' || $payment->status === 'refunded') {
+            $this->subscriptionService->syncChannelAccessForUser($payment->subscription->user_id);
+        }
     }
 }

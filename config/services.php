@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'liqpay' => [
+        'public_key' => env('LIQPAY_PUBLIC_KEY'),
+        'private_key' => env('LIQPAY_PRIVATE_KEY'),
+        'base_url' => env('LIQPAY_BASE_URL', 'https://www.liqpay.ua'),
+    ],
+
 ];

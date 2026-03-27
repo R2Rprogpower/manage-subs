@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Infrastructure\Services\Contracts\PaymentGatewayInterface;
+use App\Infrastructure\Services\LiqPayGateway;
 use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -86,6 +88,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
         $this->app->bind(PaymentServiceInterface::class, PaymentService::class);
+        $this->app->bind(PaymentGatewayInterface::class, LiqPayGateway::class);
     }
 
     /**

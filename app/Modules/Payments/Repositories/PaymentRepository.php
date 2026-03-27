@@ -20,6 +20,16 @@ class PaymentRepository implements PaymentRepositoryInterface
             ->find($id);
     }
 
+    public function findByProviderPaymentId(string $provider, string $providerPaymentId): ?Payment
+    {
+        /** @var Payment|null */
+        return Payment::query()
+            ->with(['subscription.user', 'subscription.plan'])
+            ->where('provider', $provider)
+            ->where('provider_payment_id', $providerPaymentId)
+            ->first();
+    }
+
     /**
      * @return Collection<int, Payment>
      */

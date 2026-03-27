@@ -13,6 +13,8 @@ interface PaymentRepositoryInterface
 {
     public function findById(int $id): ?Payment;
 
+    public function findByProviderPaymentId(string $provider, string $providerPaymentId): ?Payment;
+
     /**
      * @return Collection<int, Payment>
      */

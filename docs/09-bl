@@ -48,3 +48,132 @@ Acceptance Criteria
 - User with expired/cancelled/lapsed subscription does not have channel access.
 - Admin can view and manage users and subscriptions.
 - Access changes are applied consistently when subscription state changes.
+
+Suggested Interface Extensions
+
+Goal
+- Add only contract methods first, then implement behavior in services/processors.
+
+1) `SubscriptionServiceInterface` (primary BL orchestration)
+
+Suggested methods:
+
+```php
+public function hasActiveAccess(int $userId, ?\DateTimeInterface $at = null): bool;
+
+public function expireLapsedSubscriptions(?\DateTimeInterface $at = null): int;
+
+public function activateSubscription(int $subscriptionId, ?int $actorId = null): \App\Models\Subscription;
+
+public function cancelSubscription(int $subscriptionId, ?int $actorId = null): \App\Models\Subscription;
+
+public function renewSubscription(int $subscriptionId, ?\DateTimeInterface $newEndsAt = null, ?int $actorId = null): \App\Models\Subscription;
+
+public function grantFreeAccess(int $userId, int $planId, ?int $actorId = null): \App\Models\Subscription;
+
+public function syncChannelAccessForUser(int $userId, ?\DateTimeInterface $at = null): bool;
+```
+
+Why:
+- Encodes Rule 1/2/3 and lifecycle triggers from Rule 4 in one service boundary.
+
+2) `SubscriptionRepositoryInterface` (query support for BL)
+
+Suggested methods:
+
+```php
+public function findActiveByUserId(int $userId, ?\DateTimeInterface $at = null): ?\App\Models\Subscription;
+
+/** @return \Illuminate\Database\Eloquent\Collection<int, \App\Models\Subscription> */
+public function findLapsedActive(?\DateTimeInterface $at = null): \Illuminate\Database\Eloquent\Collection;
+
+/** @return \Illuminate\Database\Eloquent\Collection<int, \App\Models\Subscription> */
+public function findByUserId(int $userId): \Illuminate\Database\Eloquent\Collection;
+```
+
+Why:
+- Supports efficient checks and batch expiration without embedding query logic in services.
+
+3) `PaymentServiceInterface` (payment-driven lifecycle hooks)
+
+Suggested methods:
+
+```php
+public function markPaid(int $paymentId, ?\DateTimeInterface $paidAt = null, ?int $actorId = null): \App\Models\Payment;
+
+public function markFailed(int $paymentId, ?int $actorId = null): \App\Models\Payment;
+
+public function onPaymentStateChanged(int $paymentId, ?int $actorId = null): void;
+```
+
+Why:
+- Connects payment events to subscription status transitions and access synchronization.
+
+4) New contract suggestion: `TelegramAccessServiceInterface`
+
+Recommended path:
+- `app/Infrastructure/Services/Contracts/TelegramAccessServiceInterface.php`
+
+Suggested methods:
+
+```php
+public function grantChannelAccess(int $userId): bool;
+
+public function revokeChannelAccess(int $userId): bool;
+
+public function syncUserAccess(int $userId, bool $shouldHaveAccess): bool;
+```
+
+Why:
+- Keeps external Telegram integration behind a dedicated boundary and preserves service purity.
+
+5) New contract suggestion: `AccessPolicyServiceInterface` (optional, domain-focused)
+
+Recommended path:
+- `app/Modules/Subscriptions/Contracts/Services/AccessPolicyServiceInterface.php`
+
+Suggested methods:
+
+```php
+public function shouldHaveChannelAccess(int $userId, ?\DateTimeInterface $at = null): bool;
+
+public function evaluateSubscriptionAccess(\App\Models\Subscription $subscription, ?\DateTimeInterface $at = null): bool;
+```
+
+Why:
+- Centralizes the rule calculation (`active`, `ends_at`, `cancelled/expired`) for reuse and testing.
+
+Implementation Sequence (contracts-first)
+1. Extend `SubscriptionServiceInterface` and `SubscriptionRepositoryInterface`.
+2. Add `TelegramAccessServiceInterface` and bind a concrete adapter.
+3. Extend `PaymentServiceInterface` to trigger subscription/access updates.
+4. Add unit tests for access evaluation and lifecycle transitions.
+5. Add feature tests for end-to-end access grant/revoke flows.
+
+Suggested Process Flows
+
+Process 1: Subscription Activation (manual/admin)
+1. Input: `subscriptionId`, optional `actorId`.
+2. Call `SubscriptionServiceInterface::activateSubscription($subscriptionId, $actorId)`.
+3. Inside service, set subscription status to `active` and ensure validity period (`started_at`, `ends_at`) is consistent.
+4. Call `SubscriptionServiceInterface::syncChannelAccessForUser($userId)`.
+5. Sync step computes access via `hasActiveAccess($userId)` and applies Telegram state through `TelegramAccessServiceInterface::syncUserAccess($userId, true)`.
+6. Output: active subscription + confirmed channel access state.
+
+Process 2: Scheduled Lapse/Revoke Job (cron)
+1. Trigger: periodic scheduler (for example every 5 minutes).
+2. Call `SubscriptionServiceInterface::expireLapsedSubscriptions(now())`.
+3. Service pulls candidates via `SubscriptionRepositoryInterface::findLapsedActive(now())`.
+4. For each lapsed subscription, set status to `expired` and call `syncChannelAccessForUser($userId)`.
+5. Sync resolves to `TelegramAccessServiceInterface::syncUserAccess($userId, false)` when no other active access exists.
+6. Output: count of expired subscriptions and revoked users.
+
+Process 3: Payment Webhook -> Access Update
+1. Trigger: provider webhook (`paid` or `failed`) with `paymentId`.
+2. Call `PaymentServiceInterface::markPaid($paymentId, $paidAt, $actorId)` or `markFailed($paymentId, $actorId)`.
+3. Then call `PaymentServiceInterface::onPaymentStateChanged($paymentId, $actorId)`.
+4. Payment service locates related subscription and applies lifecycle action:
+	- paid: activate or renew using `SubscriptionServiceInterface::activateSubscription` or `renewSubscription`
+	- failed: keep/push subscription to non-active state if grace policy requires
+5. Finalize by calling `SubscriptionServiceInterface::syncChannelAccessForUser($userId)`.
+6. Output: payment status persisted, subscription state reconciled, Telegram access synchronized.

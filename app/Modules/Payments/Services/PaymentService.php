@@ -9,6 +9,7 @@ use App\Modules\Payments\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Modules\Payments\Contracts\Services\PaymentServiceInterface;
 use App\Modules\Payments\DTO\CreatePaymentDTO;
 use App\Modules\Payments\DTO\UpdatePaymentDTO;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 class PaymentService implements PaymentServiceInterface
@@ -57,5 +58,20 @@ class PaymentService implements PaymentServiceInterface
         }
 
         $this->paymentRepository->delete($payment);
+    }
+
+    public function markPaid(int $paymentId, ?DateTimeInterface $paidAt = null, ?int $actorId = null): Payment
+    {
+        throw new \BadMethodCallException('markPaid is not implemented yet.');
+    }
+
+    public function markFailed(int $paymentId, ?int $actorId = null): Payment
+    {
+        throw new \BadMethodCallException('markFailed is not implemented yet.');
+    }
+
+    public function onPaymentStateChanged(int $paymentId, ?int $actorId = null): void
+    {
+        throw new \BadMethodCallException('onPaymentStateChanged is not implemented yet.');
     }
 }

@@ -133,6 +133,10 @@ Set these under `Settings → Secrets and variables → Actions → Variables` *
 | `VPS_HOST` | VPS public IP (`curl -4 ifconfig.me`) |
 | `VPS_USER` | SSH user (e.g. `deploy`) |
 | `VPS_SSH_KEY` | Private key content (`cat ~/.ssh/<key>`) |
+ ssh-keygen -t ed25519 -f /root/.ssh/ms_deploy_key_nopass -C "ms-deploy"
+  cat /root/.ssh/ms_deploy_key_nopass.pub >> /root/.ssh/authorized_keys
+  cat /root/.ssh/ms_deploy_key_nopass
+  
 | `DEPLOY_WEBHOOK_URL` | Optional — Slack/webhook URL for deploy notifications |
 
 Important:

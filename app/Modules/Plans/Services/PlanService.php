@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\Plans\Services;
 
 use App\Models\Plan;
+use App\Modules\Plans\Contracts\Repositories\PlanRepositoryInterface;
+use App\Modules\Plans\Contracts\Services\PlanServiceInterface;
 use App\Modules\Plans\DTO\CreatePlanDTO;
 use App\Modules\Plans\DTO\UpdatePlanDTO;
-use App\Modules\Plans\Repositories\PlanRepository;
 use Illuminate\Database\Eloquent\Collection;
 
-class PlanService
+class PlanService implements PlanServiceInterface
 {
     public function __construct(
-        private readonly PlanRepository $planRepository
+        private readonly PlanRepositoryInterface $planRepository
     ) {}
 
     /**

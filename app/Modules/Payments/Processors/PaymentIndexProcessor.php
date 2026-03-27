@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Payments\Processors;
 
 use App\Core\Abstracts\Processor;
-use App\Modules\Payments\Services\PaymentService;
+use App\Modules\Payments\Contracts\Services\PaymentServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 class PaymentIndexProcessor extends Processor
 {
     public function __construct(
-        private readonly PaymentService $paymentService
+        private readonly PaymentServiceInterface $paymentService
     ) {}
 
     /**

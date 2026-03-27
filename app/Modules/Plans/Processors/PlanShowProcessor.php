@@ -7,12 +7,12 @@ namespace App\Modules\Plans\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Exceptions\BaseException;
 use App\Models\Plan;
-use App\Modules\Plans\Services\PlanService;
+use App\Modules\Plans\Contracts\Services\PlanServiceInterface;
 
 class PlanShowProcessor extends Processor
 {
     public function __construct(
-        private readonly PlanService $planService
+        private readonly PlanServiceInterface $planService
     ) {}
 
     public function execute(int $id): Plan

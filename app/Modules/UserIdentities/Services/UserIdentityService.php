@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\UserIdentities\Services;
 
 use App\Models\UserIdentity;
+use App\Modules\UserIdentities\Contracts\Repositories\UserIdentityRepositoryInterface;
+use App\Modules\UserIdentities\Contracts\Services\UserIdentityServiceInterface;
 use App\Modules\UserIdentities\DTO\CreateUserIdentityDTO;
 use App\Modules\UserIdentities\DTO\UpdateUserIdentityDTO;
-use App\Modules\UserIdentities\Repositories\UserIdentityRepository;
 use Illuminate\Database\Eloquent\Collection;
 
-class UserIdentityService
+class UserIdentityService implements UserIdentityServiceInterface
 {
     public function __construct(
-        private readonly UserIdentityRepository $userIdentityRepository
+        private readonly UserIdentityRepositoryInterface $userIdentityRepository
     ) {}
 
     /**

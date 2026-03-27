@@ -7,12 +7,12 @@ namespace App\Modules\Auth\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Modules\Auth\DTO\MfaVerifyDTO;
-use App\Modules\Auth\Services\MfaService;
+use App\Modules\Auth\Contracts\Services\MfaServiceInterface;
 
 class MfaVerifyProcessor extends Processor
 {
     public function __construct(
-        private readonly MfaService $mfaService
+        private readonly MfaServiceInterface $mfaService
     ) {}
 
     /**

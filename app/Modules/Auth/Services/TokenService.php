@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Auth\Services;
 
 use App\Models\User;
+use App\Modules\Auth\Contracts\Services\TokenServiceInterface;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 
-class TokenService
+class TokenService implements TokenServiceInterface
 {
     /**
      * @param  array<int, string>  $abilities

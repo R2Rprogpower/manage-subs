@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Payments\Repositories;
 
 use App\Models\Payment;
+use App\Modules\Payments\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Modules\Payments\DTO\CreatePaymentDTO;
 use App\Modules\Payments\DTO\UpdatePaymentDTO;
 use Illuminate\Database\Eloquent\Collection;
 
-class PaymentRepository
+class PaymentRepository implements PaymentRepositoryInterface
 {
     public function findById(int $id): ?Payment
     {

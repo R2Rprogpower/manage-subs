@@ -7,12 +7,12 @@ namespace App\Modules\Subscriptions\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Exceptions\BaseException;
 use App\Models\Subscription;
-use App\Modules\Subscriptions\Services\SubscriptionService;
+use App\Modules\Subscriptions\Contracts\Services\SubscriptionServiceInterface;
 
 class SubscriptionShowProcessor extends Processor
 {
     public function __construct(
-        private readonly SubscriptionService $subscriptionService
+        private readonly SubscriptionServiceInterface $subscriptionService
     ) {}
 
     public function execute(int $id): Subscription

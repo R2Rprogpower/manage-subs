@@ -6,20 +6,21 @@ namespace App\Modules\Auth\Services;
 
 use App\Core\Exceptions\ForbiddenException;
 use App\Core\Exceptions\UnauthorizedException;
+use App\Modules\Auth\Contracts\Repositories\AuthUserRepositoryInterface;
+use App\Modules\Auth\Contracts\Services\MfaServiceInterface;
 use App\Infrastructure\Services\AuditLogService;
 use App\Models\User;
 use App\Modules\Auth\DTO\MfaSetupDTO;
 use App\Modules\Auth\DTO\MfaVerifyDTO;
-use App\Modules\Auth\Repositories\AuthUserRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
 
-class MfaService
+class MfaService implements MfaServiceInterface
 {
     public function __construct(
-        private readonly AuthUserRepository $userRepository,
+        private readonly AuthUserRepositoryInterface $userRepository,
         private readonly AuditLogService $auditLogService,
         private readonly Google2FA $google2FA
     ) {}

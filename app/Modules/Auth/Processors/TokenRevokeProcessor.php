@@ -7,12 +7,12 @@ namespace App\Modules\Auth\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Modules\Auth\DTO\TokenRevokeDTO;
-use App\Modules\Auth\Services\AuthService;
+use App\Modules\Auth\Contracts\Services\AuthServiceInterface;
 
 class TokenRevokeProcessor extends Processor
 {
     public function __construct(
-        private readonly AuthService $authService
+        private readonly AuthServiceInterface $authService
     ) {}
 
     /**

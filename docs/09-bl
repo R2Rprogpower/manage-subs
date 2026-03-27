@@ -1,0 +1,50 @@
+Business Logic Specification: Telegram Subscription Access
+
+Scope
+- This system manages access to a Telegram channel based on subscription status.
+- Access is granted only while a user has an active subscription.
+- Admin users can view and manage users, subscriptions, plans, and payments.
+
+Actors
+- End User: subscribes and receives/revokes Telegram channel access.
+- Admin: governs platform data and subscription operations.
+
+Core Domain Rules
+- Rule 1: Channel access requires an active subscription.
+	Condition: `subscription.status = active` and subscription is not expired.
+	Result: user is allowed access to Telegram channel.
+
+- Rule 2: Lapsed or inactive subscription removes access.
+	Condition: subscription status is `expired` or `cancelled`, or subscription `ends_at` is in the past.
+	Result: channel access must be revoked.
+
+- Rule 3: Free/unlimited access is represented explicitly.
+	Condition: a subscription exists with `status = active` and `ends_at = null` (for unlimited/free use cases).
+	Result: access remains enabled until subscription status changes.
+
+- Rule 4: Access state must follow subscription lifecycle changes.
+	Trigger events:
+	- subscription created and activated
+	- subscription renewed
+	- subscription expired
+	- subscription cancelled
+	- payment marked failed/paid where applicable
+	Result: access grant/revoke action should be executed accordingly.
+
+Administrative Rules
+- Admin can list and inspect users.
+- Admin can list and inspect subscriptions.
+- Admin can create/update/cancel subscriptions.
+- Admin can view plans and payments for audit and support operations.
+- Admin actions must be permission-based and auditable.
+
+Operational Notes
+- Access synchronization with Telegram should be idempotent.
+- Failures in Telegram sync should be logged and retried.
+- Source of truth for access is internal subscription state; Telegram membership is synchronized from it.
+
+Acceptance Criteria
+- User with active subscription has channel access.
+- User with expired/cancelled/lapsed subscription does not have channel access.
+- Admin can view and manage users and subscriptions.
+- Access changes are applied consistently when subscription state changes.

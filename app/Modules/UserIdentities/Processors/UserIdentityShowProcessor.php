@@ -7,12 +7,12 @@ namespace App\Modules\UserIdentities\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Exceptions\BaseException;
 use App\Models\UserIdentity;
-use App\Modules\UserIdentities\Services\UserIdentityService;
+use App\Modules\UserIdentities\Contracts\Services\UserIdentityServiceInterface;
 
 class UserIdentityShowProcessor extends Processor
 {
     public function __construct(
-        private readonly UserIdentityService $userIdentityService
+        private readonly UserIdentityServiceInterface $userIdentityService
     ) {}
 
     public function execute(int $id): UserIdentity

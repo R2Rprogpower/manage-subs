@@ -8,12 +8,12 @@ use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\Subscription;
 use App\Modules\Subscriptions\DTO\UpdateSubscriptionDTO;
-use App\Modules\Subscriptions\Services\SubscriptionService;
+use App\Modules\Subscriptions\Contracts\Services\SubscriptionServiceInterface;
 
 class SubscriptionUpdateProcessor extends Processor
 {
     public function __construct(
-        private readonly SubscriptionService $subscriptionService
+        private readonly SubscriptionServiceInterface $subscriptionService
     ) {}
 
     public function execute(BaseRequest $request, int $id): Subscription

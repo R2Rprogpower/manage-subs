@@ -6,8 +6,8 @@ namespace App\Modules\Auth\Processors;
 
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
-use App\Modules\Auth\DTO\LoginDTO;
 use App\Modules\Auth\Contracts\Services\AuthServiceInterface;
+use App\Modules\Auth\DTO\LoginDTO;
 
 class LoginProcessor extends Processor
 {

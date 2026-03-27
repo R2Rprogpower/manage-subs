@@ -16,7 +16,7 @@ class StoreSubscriptionRequest extends Request
     }
 
     /**
-     * @return array<string, list<string|Rule>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {

@@ -24,7 +24,7 @@ class SubscriptionPresentation extends Presentation implements PresentationInter
             'user_id' => $data->user_id,
             'plan_id' => $data->plan_id,
             'status' => $data->status,
-            'started_at' => $data->started_at?->toIso8601String(),
+            'started_at' => $data->started_at->toIso8601String(),
             'ends_at' => $data->ends_at?->toIso8601String(),
             'auto_renew' => $data->auto_renew,
             'trial_used' => $data->trial_used,

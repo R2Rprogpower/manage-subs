@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Permissions\Processors;
 
 use App\Core\Abstracts\Processor;
+use App\Modules\Permissions\Contracts\Services\RoleServiceInterface;
 use App\Modules\Permissions\DTO\CreateRoleDTO;
 use App\Modules\Permissions\Http\Requests\StoreRoleRequest;
-use App\Modules\Permissions\Contracts\Services\RoleServiceInterface;
 use Spatie\Permission\Models\Role;
 
 class RoleStoreProcessor extends Processor

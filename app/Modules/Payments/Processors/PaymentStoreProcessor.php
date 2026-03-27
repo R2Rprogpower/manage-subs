@@ -7,8 +7,8 @@ namespace App\Modules\Payments\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\Payment;
-use App\Modules\Payments\DTO\CreatePaymentDTO;
 use App\Modules\Payments\Contracts\Services\PaymentServiceInterface;
+use App\Modules\Payments\DTO\CreatePaymentDTO;
 
 class PaymentStoreProcessor extends Processor
 {

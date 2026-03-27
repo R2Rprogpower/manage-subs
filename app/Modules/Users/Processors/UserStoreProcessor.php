@@ -7,8 +7,8 @@ namespace App\Modules\Users\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\User;
-use App\Modules\Users\DTO\CreateUserDTO;
 use App\Modules\Users\Contracts\Services\UserServiceInterface;
+use App\Modules\Users\DTO\CreateUserDTO;
 
 class UserStoreProcessor extends Processor
 {

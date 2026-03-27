@@ -7,8 +7,8 @@ namespace App\Modules\Plans\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\Plan;
-use App\Modules\Plans\DTO\UpdatePlanDTO;
 use App\Modules\Plans\Contracts\Services\PlanServiceInterface;
+use App\Modules\Plans\DTO\UpdatePlanDTO;
 
 class PlanUpdateProcessor extends Processor
 {

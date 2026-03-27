@@ -26,7 +26,7 @@ class SubscriptionIndexPresentation extends Presentation implements Presentation
             'user_id' => $subscription->user_id,
             'plan_id' => $subscription->plan_id,
             'status' => $subscription->status,
-            'started_at' => $subscription->started_at?->toIso8601String(),
+            'started_at' => $subscription->started_at->toIso8601String(),
             'ends_at' => $subscription->ends_at?->toIso8601String(),
             'auto_renew' => $subscription->auto_renew,
             'trial_used' => $subscription->trial_used,

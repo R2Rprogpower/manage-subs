@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Subscriptions\Processors;
 
 use App\Core\Abstracts\Processor;
-use App\Modules\Subscriptions\Services\SubscriptionService;
+use App\Modules\Subscriptions\Contracts\Services\SubscriptionServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 class SubscriptionIndexProcessor extends Processor
 {
     public function __construct(
-        private readonly SubscriptionService $subscriptionService
+        private readonly SubscriptionServiceInterface $subscriptionService
     ) {}
 
     /**

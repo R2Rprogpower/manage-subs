@@ -8,12 +8,12 @@ use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\UserIdentity;
 use App\Modules\UserIdentities\DTO\UpdateUserIdentityDTO;
-use App\Modules\UserIdentities\Services\UserIdentityService;
+use App\Modules\UserIdentities\Contracts\Services\UserIdentityServiceInterface;
 
 class UserIdentityUpdateProcessor extends Processor
 {
     public function __construct(
-        private readonly UserIdentityService $userIdentityService
+        private readonly UserIdentityServiceInterface $userIdentityService
     ) {}
 
     public function execute(BaseRequest $request, int $id): UserIdentity

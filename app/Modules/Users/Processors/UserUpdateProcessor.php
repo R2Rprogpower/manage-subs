@@ -8,12 +8,12 @@ use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\User;
 use App\Modules\Users\DTO\UpdateUserDTO;
-use App\Modules\Users\Services\UserService;
+use App\Modules\Users\Contracts\Services\UserServiceInterface;
 
 class UserUpdateProcessor extends Processor
 {
     public function __construct(
-        private readonly UserService $userService
+        private readonly UserServiceInterface $userService
     ) {}
 
     public function execute(BaseRequest $request, int $id): User

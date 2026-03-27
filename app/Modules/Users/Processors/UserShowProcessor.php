@@ -7,12 +7,12 @@ namespace App\Modules\Users\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Exceptions\BaseException;
 use App\Models\User;
-use App\Modules\Users\Services\UserService;
+use App\Modules\Users\Contracts\Services\UserServiceInterface;
 
 class UserShowProcessor extends Processor
 {
     public function __construct(
-        private readonly UserService $userService
+        private readonly UserServiceInterface $userService
     ) {}
 
     public function execute(int $id): User

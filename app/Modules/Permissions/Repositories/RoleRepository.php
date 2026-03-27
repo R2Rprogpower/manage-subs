@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Permissions\Repositories;
 
+use App\Modules\Permissions\Contracts\Repositories\RoleRepositoryInterface;
 use App\Modules\Permissions\DTO\CreateRoleDTO;
 use App\Modules\Permissions\DTO\UpdateRoleDTO;
 use Illuminate\Database\Eloquent\Collection;
 use Spatie\Permission\Models\Role;
 
-class RoleRepository
+class RoleRepository implements RoleRepositoryInterface
 {
     public function findById(int $id): ?Role
     {

@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\Payments\Services;
 
 use App\Models\Payment;
+use App\Modules\Payments\Contracts\Repositories\PaymentRepositoryInterface;
+use App\Modules\Payments\Contracts\Services\PaymentServiceInterface;
 use App\Modules\Payments\DTO\CreatePaymentDTO;
 use App\Modules\Payments\DTO\UpdatePaymentDTO;
-use App\Modules\Payments\Repositories\PaymentRepository;
 use Illuminate\Database\Eloquent\Collection;
 
-class PaymentService
+class PaymentService implements PaymentServiceInterface
 {
     public function __construct(
-        private readonly PaymentRepository $paymentRepository
+        private readonly PaymentRepositoryInterface $paymentRepository
     ) {}
 
     /**

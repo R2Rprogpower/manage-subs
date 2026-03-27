@@ -6,16 +6,17 @@ namespace App\Modules\Users\Services;
 
 use App\Infrastructure\Services\AuditLogService;
 use App\Models\User;
+use App\Modules\Users\Contracts\Repositories\UserRepositoryInterface;
+use App\Modules\Users\Contracts\Services\UserServiceInterface;
 use App\Modules\Users\DTO\CreateUserDTO;
 use App\Modules\Users\DTO\UpdateUserDTO;
-use App\Modules\Users\Repositories\UserRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
-class UserService
+class UserService implements UserServiceInterface
 {
     public function __construct(
-        private readonly UserRepository $userRepository,
+        private readonly UserRepositoryInterface $userRepository,
         private readonly AuditLogService $auditLogService
     ) {}
 

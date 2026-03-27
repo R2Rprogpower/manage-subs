@@ -8,20 +8,23 @@ use App\Core\Exceptions\ForbiddenException;
 use App\Core\Exceptions\UnauthorizedException;
 use App\Infrastructure\Services\AuditLogService;
 use App\Models\User;
+use App\Modules\Auth\Contracts\Repositories\AuthUserRepositoryInterface;
+use App\Modules\Auth\Contracts\Services\AuthServiceInterface;
+use App\Modules\Auth\Contracts\Services\MfaServiceInterface;
+use App\Modules\Auth\Contracts\Services\TokenServiceInterface;
 use App\Modules\Auth\DTO\LoginDTO;
 use App\Modules\Auth\DTO\TokenRevokeDTO;
-use App\Modules\Auth\Repositories\AuthUserRepository;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
-class AuthService
+class AuthService implements AuthServiceInterface
 {
     public function __construct(
-        private readonly AuthUserRepository $userRepository,
-        private readonly TokenService $tokenService,
-        private readonly MfaService $mfaService,
+        private readonly AuthUserRepositoryInterface $userRepository,
+        private readonly TokenServiceInterface $tokenService,
+        private readonly MfaServiceInterface $mfaService,
         private readonly AuditLogService $auditLogService
     ) {}
 

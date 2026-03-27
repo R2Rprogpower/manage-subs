@@ -8,12 +8,12 @@ use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\Plan;
 use App\Modules\Plans\DTO\CreatePlanDTO;
-use App\Modules\Plans\Services\PlanService;
+use App\Modules\Plans\Contracts\Services\PlanServiceInterface;
 
 class PlanStoreProcessor extends Processor
 {
     public function __construct(
-        private readonly PlanService $planService
+        private readonly PlanServiceInterface $planService
     ) {}
 
     public function execute(BaseRequest $request): Plan

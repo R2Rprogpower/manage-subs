@@ -6,18 +6,19 @@ namespace App\Modules\Permissions\Services;
 
 use App\Infrastructure\Services\AuditLogService;
 use App\Models\User;
+use App\Modules\Permissions\Contracts\Repositories\RoleRepositoryInterface;
+use App\Modules\Permissions\Contracts\Services\RoleServiceInterface;
 use App\Modules\Permissions\DTO\CreateRoleDTO;
 use App\Modules\Permissions\DTO\RoleResponseDTO;
 use App\Modules\Permissions\DTO\UpdateRoleDTO;
-use App\Modules\Permissions\Repositories\RoleRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
-class RoleService
+class RoleService implements RoleServiceInterface
 {
     public function __construct(
-        private readonly RoleRepository $roleRepository,
+        private readonly RoleRepositoryInterface $roleRepository,
         private readonly AuditLogService $auditLogService
     ) {}
 

@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\Subscriptions\Services;
 
 use App\Models\Subscription;
+use App\Modules\Subscriptions\Contracts\Repositories\SubscriptionRepositoryInterface;
+use App\Modules\Subscriptions\Contracts\Services\SubscriptionServiceInterface;
 use App\Modules\Subscriptions\DTO\CreateSubscriptionDTO;
 use App\Modules\Subscriptions\DTO\UpdateSubscriptionDTO;
-use App\Modules\Subscriptions\Repositories\SubscriptionRepository;
 use Illuminate\Database\Eloquent\Collection;
 
-class SubscriptionService
+class SubscriptionService implements SubscriptionServiceInterface
 {
     public function __construct(
-        private readonly SubscriptionRepository $subscriptionRepository
+        private readonly SubscriptionRepositoryInterface $subscriptionRepository
     ) {}
 
     /**

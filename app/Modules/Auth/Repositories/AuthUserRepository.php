@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Auth\Repositories;
 
 use App\Models\User;
+use App\Modules\Auth\Contracts\Repositories\AuthUserRepositoryInterface;
 
-class AuthUserRepository
+class AuthUserRepository implements AuthUserRepositoryInterface
 {
     public function findByEmail(string $email): ?User
     {

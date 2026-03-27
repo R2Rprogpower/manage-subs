@@ -8,12 +8,12 @@ use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\Payment;
 use App\Modules\Payments\DTO\CreatePaymentDTO;
-use App\Modules\Payments\Services\PaymentService;
+use App\Modules\Payments\Contracts\Services\PaymentServiceInterface;
 
 class PaymentStoreProcessor extends Processor
 {
     public function __construct(
-        private readonly PaymentService $paymentService
+        private readonly PaymentServiceInterface $paymentService
     ) {}
 
     public function execute(BaseRequest $request): Payment

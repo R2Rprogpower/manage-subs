@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\UserIdentities\Repositories;
 
 use App\Models\UserIdentity;
+use App\Modules\UserIdentities\Contracts\Repositories\UserIdentityRepositoryInterface;
 use App\Modules\UserIdentities\DTO\CreateUserIdentityDTO;
 use App\Modules\UserIdentities\DTO\UpdateUserIdentityDTO;
 use Illuminate\Database\Eloquent\Collection;
 
-class UserIdentityRepository
+class UserIdentityRepository implements UserIdentityRepositoryInterface
 {
     public function findById(int $id): ?UserIdentity
     {

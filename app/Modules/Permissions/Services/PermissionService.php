@@ -6,17 +6,18 @@ namespace App\Modules\Permissions\Services;
 
 use App\Infrastructure\Services\AuditLogService;
 use App\Models\User;
+use App\Modules\Permissions\Contracts\Repositories\PermissionRepositoryInterface;
+use App\Modules\Permissions\Contracts\Services\PermissionServiceInterface;
 use App\Modules\Permissions\DTO\PermissionResponseDTO;
-use App\Modules\Permissions\Repositories\PermissionRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
-class PermissionService
+class PermissionService implements PermissionServiceInterface
 {
     public function __construct(
-        private readonly PermissionRepository $permissionRepository,
+        private readonly PermissionRepositoryInterface $permissionRepository,
         private readonly AuditLogService $auditLogService
     ) {}
 

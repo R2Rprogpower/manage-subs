@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Subscriptions\Repositories;
 
 use App\Models\Subscription;
+use App\Modules\Subscriptions\Contracts\Repositories\SubscriptionRepositoryInterface;
 use App\Modules\Subscriptions\DTO\CreateSubscriptionDTO;
 use App\Modules\Subscriptions\DTO\UpdateSubscriptionDTO;
 use Illuminate\Database\Eloquent\Collection;
 
-class SubscriptionRepository
+class SubscriptionRepository implements SubscriptionRepositoryInterface
 {
     public function findById(int $id): ?Subscription
     {

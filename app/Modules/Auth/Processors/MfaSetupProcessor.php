@@ -6,8 +6,8 @@ namespace App\Modules\Auth\Processors;
 
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
-use App\Modules\Auth\DTO\MfaSetupDTO;
 use App\Modules\Auth\Contracts\Services\MfaServiceInterface;
+use App\Modules\Auth\DTO\MfaSetupDTO;
 
 class MfaSetupProcessor extends Processor
 {

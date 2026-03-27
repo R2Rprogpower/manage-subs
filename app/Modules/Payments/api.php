@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Modules\Payments\Http\Controllers\PaymentController;
 use App\Modules\Payments\Http\Controllers\PaymentCheckoutController;
+use App\Modules\Payments\Http\Controllers\PaymentController;
 use App\Modules\Payments\Http\Controllers\PaymentWebhookController;
 use Illuminate\Support\Facades\Route;
 

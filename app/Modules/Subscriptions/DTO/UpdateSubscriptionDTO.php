@@ -6,6 +6,9 @@ namespace App\Modules\Subscriptions\DTO;
 
 readonly class UpdateSubscriptionDTO
 {
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function __construct(
         private array $data = []
     ) {}

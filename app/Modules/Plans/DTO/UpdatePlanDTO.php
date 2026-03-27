@@ -6,6 +6,9 @@ namespace App\Modules\Plans\DTO;
 
 readonly class UpdatePlanDTO
 {
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function __construct(
         private array $data = []
     ) {}

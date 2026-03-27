@@ -7,8 +7,8 @@ namespace App\Modules\UserIdentities\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\UserIdentity;
-use App\Modules\UserIdentities\DTO\UpdateUserIdentityDTO;
 use App\Modules\UserIdentities\Contracts\Services\UserIdentityServiceInterface;
+use App\Modules\UserIdentities\DTO\UpdateUserIdentityDTO;
 
 class UserIdentityUpdateProcessor extends Processor
 {

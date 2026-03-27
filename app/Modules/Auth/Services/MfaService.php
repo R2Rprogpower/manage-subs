@@ -6,10 +6,10 @@ namespace App\Modules\Auth\Services;
 
 use App\Core\Exceptions\ForbiddenException;
 use App\Core\Exceptions\UnauthorizedException;
-use App\Modules\Auth\Contracts\Repositories\AuthUserRepositoryInterface;
-use App\Modules\Auth\Contracts\Services\MfaServiceInterface;
 use App\Infrastructure\Services\AuditLogService;
 use App\Models\User;
+use App\Modules\Auth\Contracts\Repositories\AuthUserRepositoryInterface;
+use App\Modules\Auth\Contracts\Services\MfaServiceInterface;
 use App\Modules\Auth\DTO\MfaSetupDTO;
 use App\Modules\Auth\DTO\MfaVerifyDTO;
 use Illuminate\Http\Request;

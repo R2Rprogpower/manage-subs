@@ -7,8 +7,8 @@ namespace App\Modules\Users\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\User;
-use App\Modules\Users\DTO\UpdateUserDTO;
 use App\Modules\Users\Contracts\Services\UserServiceInterface;
+use App\Modules\Users\DTO\UpdateUserDTO;
 
 class UserUpdateProcessor extends Processor
 {

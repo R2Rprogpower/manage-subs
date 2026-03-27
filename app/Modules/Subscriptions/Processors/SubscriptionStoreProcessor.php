@@ -7,8 +7,8 @@ namespace App\Modules\Subscriptions\Processors;
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\Subscription;
-use App\Modules\Subscriptions\DTO\CreateSubscriptionDTO;
 use App\Modules\Subscriptions\Contracts\Services\SubscriptionServiceInterface;
+use App\Modules\Subscriptions\DTO\CreateSubscriptionDTO;
 
 class SubscriptionStoreProcessor extends Processor
 {

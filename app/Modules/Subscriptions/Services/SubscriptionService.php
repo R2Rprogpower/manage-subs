@@ -72,7 +72,19 @@ class SubscriptionService implements SubscriptionServiceInterface
 
     public function activateSubscription(int $subscriptionId, ?int $actorId = null): Subscription
     {
-        throw new \BadMethodCallException('activateSubscription is not implemented yet.');
+        $subscription = $this->subscriptionRepository->findById($subscriptionId);
+        if (! $subscription) {
+            throw new \InvalidArgumentException("Subscription with ID {$subscriptionId} not found.");
+        }
+
+        $this->subscriptionRepository->update($subscription, new UpdateSubscriptionDTO([
+            'status' => 'active',
+        ]));
+
+        $subscription->refresh();
+        $subscription->load(['user', 'plan', 'payments']);
+
+        return $subscription;
     }
 
     public function cancelSubscription(int $subscriptionId, ?int $actorId = null): Subscription
@@ -92,6 +104,6 @@ class SubscriptionService implements SubscriptionServiceInterface
 
     public function syncChannelAccessForUser(int $userId, ?DateTimeInterface $at = null): bool
     {
-        throw new \BadMethodCallException('syncChannelAccessForUser is not implemented yet.');
+        return $this->hasActiveAccess($userId, $at);
     }
 }

@@ -50,33 +50,47 @@
                                     </a>
                                 </div>
                                 <div class="p-2">
-                                    <form class="form-horizontal" action="index">
+                                    <form id="login-form" class="form-horizontal" method="POST" action="#" data-redirect="/">
+                                        @csrf
+
+                                        <div id="login-error" class="alert alert-danger d-none" role="alert"></div>
 
                                         <div class="mb-3">
-                                            <label for="username" class="form-label">Username</label>
-                                            <input type="text" class="form-control" id="username"
-                                                placeholder="Enter username">
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email" name="email"
+                                                placeholder="Enter email" autocomplete="email" required>
+                                            <div id="email-error" class="invalid-feedback"></div>
                                         </div>
 
                                         <div class="mb-3">
                                             <label class="form-label">Password</label>
                                             <div class="input-group auth-pass-inputgroup">
-                                                <input type="password" class="form-control" placeholder="Enter password"
-                                                    aria-label="Password" aria-describedby="password-addon">
+                                                <input type="password" class="form-control" id="password" name="password"
+                                                    placeholder="Enter password" aria-label="Password" aria-describedby="password-addon"
+                                                    autocomplete="current-password" required>
                                                 <button class="btn btn-light " type="button" id="password-addon"><i
                                                         class="mdi mdi-eye-outline"></i></button>
                                             </div>
+                                            <div id="password-error" class="invalid-feedback d-block"></div>
+                                        </div>
+
+                                        <div id="mfa-group" class="mb-3 d-none">
+                                            <label for="mfa_token" class="form-label">MFA code</label>
+                                            <input type="text" class="form-control" id="mfa_token" name="mfa_token"
+                                                placeholder="Enter 6-digit code or recovery code" maxlength="10">
+                                            <div class="form-text">MFA is enabled for this account.</div>
+                                            <div id="mfa-error" class="invalid-feedback d-block"></div>
                                         </div>
 
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="remember-check">
+                                            <input class="form-check-input" type="checkbox" id="remember-check" name="remember">
                                             <label class="form-check-label" for="remember-check">
                                                 Remember me
                                             </label>
                                         </div>
 
                                         <div class="mt-3 d-grid">
-                                            <button class="btn btn-primary waves-effect waves-light" type="submit">Log
+                                            <button id="login-submit" class="btn btn-primary waves-effect waves-light" type="submit">Log
                                                 In</button>
                                         </div>
 
@@ -133,4 +147,8 @@
         </div>
         <!-- end account-pages -->
 
+    @endsection
+
+    @section('script')
+        <script src="{{ URL::asset('build/js/pages/auth-login.init.js') }}"></script>
     @endsection

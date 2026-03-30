@@ -177,3 +177,12 @@ Process 3: Payment Webhook -> Access Update
 	- failed: keep/push subscription to non-active state if grace policy requires
 5. Finalize by calling `SubscriptionServiceInterface::syncChannelAccessForUser($userId)`.
 6. Output: payment status persisted, subscription state reconciled, Telegram access synchronized.
+
+
+@todo:
+ 1. setup liqpay
+ 2. define workflows
+ 3. define services methods 
+ 4. add manual payment (submit a transaction)
+ 5. add admin pages for all the entities and business actions
+ 

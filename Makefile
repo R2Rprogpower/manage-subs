@@ -1,6 +1,9 @@
 SHELL := /bin/sh
 
-.PHONY: install-hooks check fmt lint test unit-test feature-test up build
+NODE_IMAGE := node:22-alpine
+NODE_RUN := docker run --rm -u $$(id -u):$$(id -g) -v $$(pwd):/app -w /app $(NODE_IMAGE) sh -lc
+
+.PHONY: install-hooks check fmt lint test unit-test feature-test up build theme-install theme-build theme-dev
 
 install-hooks:
 	@mkdir -p .git/hooks
@@ -13,6 +16,15 @@ up:
 
 build:
 	docker compose up -d --build
+
+theme-install:
+	$(NODE_RUN) "corepack yarn install"
+
+theme-build:
+	$(NODE_RUN) "corepack yarn theme:build"
+
+theme-dev:
+	$(NODE_RUN) "corepack yarn theme:dev"
 
 fmt:
 	docker compose exec -T app ./vendor/bin/pint
@@ -54,3 +66,6 @@ ci-check:
 	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app php artisan test --testsuite=Unit
 	docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app php artisan test --testsuite=Feature
 	@echo "All CI checks passed."
+
+cc: 
+	docker compose exec -T app php artisan optimize

@@ -12,6 +12,14 @@ services:
       - db
       - redis
 
+  frontend:
+    image: node:22-alpine
+    working_dir: /var/www/html
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
+    command: sh -lc "corepack yarn install && corepack yarn theme:dev"
+    volumes:
+      - ./:/var/www/html
+
   nginx:
     image: nginx:1.27-alpine
     ports:

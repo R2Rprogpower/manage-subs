@@ -66,9 +66,20 @@ function libs() {
         .pipe(dest(paths.assets.libs.dest));
 }
 
+function mdiCss() {
+    return src('node_modules/@mdi/font/css/materialdesignicons.min.css', { allowEmpty: true })
+        .pipe(dest(paths.styles.dest));
+}
+
+function mdiFonts() {
+    return src('node_modules/@mdi/font/fonts/materialdesignicons-webfont.*', { allowEmpty: true })
+        .pipe(dest(paths.assets.fonts.dest));
+}
+
 const styles = parallel(stylesBootstrap, stylesIcons, stylesApp);
 const assets = parallel(fonts, images, json, libs);
-const build = series(parallel(styles, scripts, assets));
+const mdiAssets = parallel(mdiCss, mdiFonts);
+const build = series(parallel(styles, scripts, assets), mdiAssets);
 
 function watchFiles() {
     watch(paths.styles.all, styles);
@@ -82,5 +93,6 @@ function watchFiles() {
 exports.styles = styles;
 exports.scripts = scripts;
 exports.assets = assets;
+exports.mdi = mdiAssets;
 exports.build = build;
 exports.default = series(build, watchFiles);

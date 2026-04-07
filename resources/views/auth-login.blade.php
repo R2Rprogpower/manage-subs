@@ -74,7 +74,7 @@
                                             <div id="password-error" class="invalid-feedback d-block"></div>
                                         </div>
 
-                                        <div id="mfa-group" class="mb-3 d-none">
+                                        <div id="mfa-group" class="mb-3">
                                             <label for="mfa_token" class="form-label">MFA code</label>
                                             <input type="text" class="form-control" id="mfa_token" name="mfa_token"
                                                 placeholder="Enter 6-digit code or recovery code" maxlength="10">

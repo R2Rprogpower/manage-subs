@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Permissions\Http\Requests;
 
 use App\Core\Abstracts\Request;
+use App\Modules\Permissions\Enums\Permission;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
@@ -12,7 +13,7 @@ class UpdateRoleRequest extends Request
 {
     public function authorize(): bool
     {
-        return $this->user()?->can(\App\Modules\Permissions\Enums\Permission::MANAGE_ROLES->value) ?? false;
+        return $this->user()?->can(Permission::MANAGE_ROLES->value) ?? false;
     }
 
     /**

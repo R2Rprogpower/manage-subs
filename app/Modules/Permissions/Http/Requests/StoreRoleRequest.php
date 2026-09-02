@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Permissions\Http\Requests;
 
 use App\Core\Abstracts\Request;
+use App\Modules\Permissions\Enums\Permission;
 
 class StoreRoleRequest extends Request
 {
     public function authorize(): bool
     {
-        return $this->user()?->can(\App\Modules\Permissions\Enums\Permission::MANAGE_ROLES->value) ?? false;
+        return $this->user()?->can(Permission::MANAGE_ROLES->value) ?? false;
     }
 
     /**

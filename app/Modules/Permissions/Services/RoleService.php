@@ -13,6 +13,7 @@ use App\Modules\Permissions\DTO\RoleResponseDTO;
 use App\Modules\Permissions\DTO\UpdateRoleDTO;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleService implements RoleServiceInterface
@@ -157,7 +158,7 @@ class RoleService implements RoleServiceInterface
 
     public function toResponseDTO(Role $role): RoleResponseDTO
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions */
+        /** @var Collection<int, Permission> $permissions */
         $permissions = $role->getAllPermissions();
 
         return new RoleResponseDTO(

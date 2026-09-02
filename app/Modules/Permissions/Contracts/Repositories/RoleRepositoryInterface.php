@@ -7,6 +7,7 @@ namespace App\Modules\Permissions\Contracts\Repositories;
 use App\Modules\Permissions\DTO\CreateRoleDTO;
 use App\Modules\Permissions\DTO\UpdateRoleDTO;
 use Illuminate\Database\Eloquent\Collection;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 interface RoleRepositoryInterface
@@ -32,7 +33,7 @@ interface RoleRepositoryInterface
     public function assignPermissions(Role $role, array $permissionIds): void;
 
     /**
-     * @return Collection<int, \Spatie\Permission\Models\Permission>
+     * @return Collection<int, Permission>
      */
     public function getPermissions(Role $role): Collection;
 }

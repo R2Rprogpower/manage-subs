@@ -6,6 +6,7 @@ namespace App\Modules\Auth\Processors;
 
 use App\Core\Abstracts\Processor;
 use App\Core\Abstracts\Request as BaseRequest;
+use App\Models\User;
 use App\Modules\Auth\Contracts\Services\AuthServiceInterface;
 use App\Modules\Auth\DTO\LoginDTO;
 
@@ -16,7 +17,7 @@ class LoginProcessor extends Processor
     ) {}
 
     /**
-     * @return array{user: \App\Models\User, token: string}
+     * @return array{user: User, token: string}
      */
     public function execute(BaseRequest $request): array
     {

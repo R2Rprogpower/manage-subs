@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\PlanFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,12 +18,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $currency
  * @property int|null $duration_days
  * @property bool $is_active
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class Plan extends Model
 {
-    /** @use HasFactory<\Database\Factories\PlanFactory> */
+    /** @use HasFactory<PlanFactory> */
     use HasFactory;
 
     /**

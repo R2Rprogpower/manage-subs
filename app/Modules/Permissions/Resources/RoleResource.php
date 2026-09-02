@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Permissions\Resources;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleResource extends JsonResource
@@ -23,7 +25,7 @@ class RoleResource extends JsonResource
             'name' => $role->name,
             'guard_name' => $role->guard_name,
             'permissions' => $this->whenLoaded('permissions', function () use ($role) {
-                /** @var \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions */
+                /** @var Collection<int, Permission> $permissions */
                 $permissions = $role->getAllPermissions();
 
                 return $permissions->map(fn ($permission) => [

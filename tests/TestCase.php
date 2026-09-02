@@ -13,8 +13,8 @@ use Illuminate\Testing\TestResponse;
  * @method TestResponse postJson(string $uri, array $data = [], array $headers = [], int $options = 0)
  * @method TestResponse getJson(string $uri, array $headers = [], int $options = 0)
  *
- * @mixin \Illuminate\Foundation\Testing\Concerns\MakesHttpRequests
- * @mixin \Illuminate\Foundation\Testing\Concerns\InteractsWithDatabase
+ * @mixin MakesHttpRequests
+ * @mixin InteractsWithDatabase
  */
 abstract class TestCase extends BaseTestCase
 {

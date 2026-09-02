@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\UserIdentityFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -15,13 +17,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $provider_user_id
  * @property string|null $username
  * @property array<string, mixed>|null $meta
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read User|null $user
  */
 class UserIdentity extends Model
 {
-    /** @use HasFactory<\Database\Factories\UserIdentityFactory> */
+    /** @use HasFactory<UserIdentityFactory> */
     use HasFactory;
 
     /**

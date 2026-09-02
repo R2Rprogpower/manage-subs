@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/health', static function (): \Illuminate\Http\JsonResponse {
+Route::get('/health', static function (): JsonResponse {
     DB::connection()->getPdo(); // throws if DB is unreachable
 
     return response()->json(['status' => 'ok !!! manage subs']);

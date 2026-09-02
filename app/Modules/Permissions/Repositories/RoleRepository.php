@@ -8,6 +8,7 @@ use App\Modules\Permissions\Contracts\Repositories\RoleRepositoryInterface;
 use App\Modules\Permissions\DTO\CreateRoleDTO;
 use App\Modules\Permissions\DTO\UpdateRoleDTO;
 use Illuminate\Database\Eloquent\Collection;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleRepository implements RoleRepositoryInterface
@@ -56,17 +57,17 @@ class RoleRepository implements RoleRepositoryInterface
      */
     public function assignPermissions(Role $role, array $permissionIds): void
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions */
-        $permissions = \Spatie\Permission\Models\Permission::query()->whereIn('id', $permissionIds)->get();
+        /** @var Collection<int, Permission> $permissions */
+        $permissions = Permission::query()->whereIn('id', $permissionIds)->get();
         $role->syncPermissions($permissions);
     }
 
     /**
-     * @return Collection<int, \Spatie\Permission\Models\Permission>
+     * @return Collection<int, Permission>
      */
     public function getPermissions(Role $role): Collection
     {
-        /** @var Collection<int, \Spatie\Permission\Models\Permission> */
+        /** @var Collection<int, Permission> */
         return $role->getAllPermissions();
     }
 }

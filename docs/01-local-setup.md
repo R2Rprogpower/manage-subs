@@ -59,6 +59,7 @@ make check
 docker compose exec -T app php artisan migrate
 docker compose exec -T app php artisan migrate:fresh
 docker compose exec -T app php artisan route:list --path=api
+docker compose exec -T app php artisan test
 ```
 
 ## Notes

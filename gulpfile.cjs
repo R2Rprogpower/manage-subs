@@ -1,10 +1,17 @@
 const { src, dest, watch, series, parallel } = require('gulp');
+const { rmSync } = require('node:fs');
 const sassCompiler = require('gulp-sass')(require('sass'));
 const cleanCSS = require('gulp-clean-css');
 const gulpAutoprefixer = require('gulp-autoprefixer');
 const rename = require('gulp-rename');
 
 const autoprefixer = gulpAutoprefixer.default || gulpAutoprefixer;
+
+const sassOptions = {
+    includePaths: ['node_modules', 'resources/scss'],
+    quietDeps: true,
+    silenceDeprecations: ['color-functions', 'global-builtin', 'if-function', 'import']
+};
 
 const paths = {
     styles: {
@@ -29,7 +36,7 @@ const paths = {
 function compileStyle(entryPath, outputName) {
     return function styleTask() {
         return src(entryPath, { allowEmpty: true })
-            .pipe(sassCompiler.sync({ includePaths: ['node_modules', 'resources/scss'] }).on('error', sassCompiler.logError))
+            .pipe(sassCompiler.sync(sassOptions).on('error', sassCompiler.logError))
             .pipe(autoprefixer())
             .pipe(cleanCSS({ level: 2 }))
             .pipe(rename(outputName))
@@ -47,12 +54,12 @@ function scripts() {
 }
 
 function fonts() {
-    return src(paths.assets.fonts.src, { allowEmpty: true })
+    return src(paths.assets.fonts.src, { allowEmpty: true, encoding: false })
         .pipe(dest(paths.assets.fonts.dest));
 }
 
 function images() {
-    return src(paths.assets.images.src, { allowEmpty: true })
+    return src(paths.assets.images.src, { allowEmpty: true, encoding: false })
         .pipe(dest(paths.assets.images.dest));
 }
 
@@ -62,7 +69,7 @@ function json() {
 }
 
 function libs() {
-    return src(paths.assets.libs.src, { allowEmpty: true })
+    return src(paths.assets.libs.src, { allowEmpty: true, encoding: false })
         .pipe(dest(paths.assets.libs.dest));
 }
 
@@ -71,14 +78,22 @@ function mdiCss() {
         .pipe(dest(paths.styles.dest));
 }
 
+function cleanMdiFonts(done) {
+    for (const extension of ['eot', 'ttf', 'woff', 'woff2']) {
+        rmSync(`public/build/fonts/materialdesignicons-webfont.${extension}`, { force: true });
+    }
+
+    done();
+}
+
 function mdiFonts() {
-    return src('node_modules/@mdi/font/fonts/materialdesignicons-webfont.*', { allowEmpty: true })
+    return src('node_modules/@mdi/font/fonts/materialdesignicons-webfont.*', { allowEmpty: true, encoding: false })
         .pipe(dest(paths.assets.fonts.dest));
 }
 
 const styles = parallel(stylesBootstrap, stylesIcons, stylesApp);
 const assets = parallel(fonts, images, json, libs);
-const mdiAssets = parallel(mdiCss, mdiFonts);
+const mdiAssets = series(cleanMdiFonts, parallel(mdiCss, mdiFonts));
 const build = series(parallel(styles, scripts, assets), mdiAssets);
 
 function watchFiles() {

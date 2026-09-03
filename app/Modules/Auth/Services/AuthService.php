@@ -18,6 +18,8 @@ use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class AuthService implements AuthServiceInterface
 {
@@ -33,31 +35,59 @@ class AuthService implements AuthServiceInterface
      */
     public function login(LoginDTO $dto, Request $request): array
     {
-        $user = $this->getUserByCredentials($dto->email, $dto->password);
+        $stage = 'credentials';
 
-        if ($user->mfa_enabled_at !== null) {
-            if (! $dto->mfaToken) {
-                throw new ForbiddenException('MFA verification required for this operation.');
+        try {
+            $user = $this->getUserByCredentials($dto->email, $dto->password);
+
+            $stage = 'mfa';
+            if ($user->mfa_enabled_at !== null) {
+                if (! $dto->mfaToken) {
+                    throw new ForbiddenException('MFA verification required for this operation.');
+                }
+
+                if (! $this->mfaService->verifyToken($user, $dto->mfaToken)) {
+                    $this->auditLogService->logMfaVerificationFailure($user, $request);
+                    throw new ForbiddenException('MFA verification required for this operation.');
+                }
             }
 
-            if (! $this->mfaService->verifyToken($user, $dto->mfaToken)) {
-                $this->auditLogService->logMfaVerificationFailure($user, $request);
-                throw new ForbiddenException('MFA verification required for this operation.');
+            $stage = 'session';
+            $guard = Auth::guard('web');
+            if ($guard instanceof StatefulGuard) {
+                $guard->login($user);
             }
-        }
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
 
-        $guard = Auth::guard('web');
-        if ($guard instanceof StatefulGuard) {
-            $guard->login($user);
-        }
-        if ($request->hasSession()) {
-            $request->session()->regenerate();
-        }
+            $stage = 'token';
+            $token = $this->tokenService->issueToken($user, 'api');
 
-        $token = $this->tokenService->issueToken($user, 'api');
-        $this->auditLogService->logAuthLogin($user, $request);
+            $stage = 'audit_log';
+            $this->auditLogService->logAuthLogin($user, $request);
 
-        return ['user' => $user, 'token' => $token];
+            Log::info('auth.login.succeeded', [
+                'user_id' => $user->getKey(),
+                'ip' => $request->ip(),
+            ]);
+
+            return ['user' => $user, 'token' => $token];
+        } catch (Throwable $exception) {
+            $context = [
+                'stage' => $stage,
+                'ip' => $request->ip(),
+                'exception' => $exception,
+            ];
+
+            if ($exception instanceof UnauthorizedException || $exception instanceof ForbiddenException) {
+                Log::warning('auth.login.rejected', $context);
+            } else {
+                Log::error('auth.login.failed', $context);
+            }
+
+            throw $exception;
+        }
     }
 
     public function logout(Request $request): void

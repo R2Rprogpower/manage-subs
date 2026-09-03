@@ -15,7 +15,7 @@ class SignupRequest extends Request
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, list<string|object>>
      */
     public function rules(): array
     {

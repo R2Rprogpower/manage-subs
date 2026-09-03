@@ -6,7 +6,6 @@ namespace App\Modules\Users\Http\Requests;
 
 use App\Core\Abstracts\Request;
 use App\Modules\Users\Enums\Permission as UserPermission;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends Request
@@ -17,7 +16,7 @@ class StoreUserRequest extends Request
     }
 
     /**
-     * @return array<string, array<int, string|Rule>>
+     * @return array<string, list<string|object>>
      */
     public function rules(): array
     {

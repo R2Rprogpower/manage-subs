@@ -17,13 +17,12 @@ class UpdateUserRequest extends Request
     }
 
     /**
-     * @return array<string, list<string|Rule>>
+     * @return array<string, list<string|object>>
      */
     public function rules(): array
     {
         $userId = $this->route('id');
 
-        /** @var array<string, list<string|Rule>> */
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],

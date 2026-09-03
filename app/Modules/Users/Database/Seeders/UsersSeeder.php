@@ -13,7 +13,7 @@ class UsersSeeder extends Seeder
     public function run(): void
     {
         if (app()->environment('production')) {
-            $this->command?->warn('Skipping demo users in production.');
+            $this->command->warn('Skipping demo users in production.');
 
             return;
         }

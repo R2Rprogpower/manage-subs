@@ -8,6 +8,9 @@ services:
       - ./:/var/www/html
     environment:
       APP_ENV: production
+      APP_DEBUG: "false"
+      SESSION_SECURE_COOKIE: "true"
+      SCRAMBLE_PROTECT_DOCS: "true"
       PHP_MEMORY_LIMIT: 512M
     depends_on:
       - db
@@ -30,7 +33,7 @@ services:
     environment:
       POSTGRES_DB: app
       POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
     volumes:
       - db_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -42,8 +45,8 @@ services:
   pgadmin:
     image: dpage/pgadmin4:9.1
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?PGADMIN_DEFAULT_EMAIL must be set}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?PGADMIN_DEFAULT_PASSWORD must be set}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     depends_on:
       - db

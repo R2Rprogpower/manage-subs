@@ -7,6 +7,7 @@ namespace App\Modules\Users\Http\Requests;
 use App\Core\Abstracts\Request;
 use App\Modules\Users\Enums\Permission as UserPermission;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends Request
 {
@@ -23,7 +24,7 @@ class StoreUserRequest extends Request
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', Password::min(10)->letters()->numbers(), 'confirmed'],
         ];
     }
 }

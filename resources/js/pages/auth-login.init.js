@@ -10,7 +10,6 @@
     var passwordInput = document.getElementById('password');
     var mfaInput = document.getElementById('mfa_token');
     var mfaGroup = document.getElementById('mfa-group');
-    var rememberInput = document.getElementById('remember-check');
     var submitButton = document.getElementById('login-submit');
     var errorBox = document.getElementById('login-error');
 
@@ -108,7 +107,7 @@
                     return;
                 }
 
-                var storage = rememberInput && rememberInput.checked ? window.localStorage : window.sessionStorage;
+                var storage = window.sessionStorage;
                 storage.setItem('access_token', token);
                 if (user) {
                     storage.setItem('auth_user', JSON.stringify(user));

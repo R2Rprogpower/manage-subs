@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Auth\Http\Requests;
 
 use App\Core\Abstracts\Request;
+use Illuminate\Validation\Rules\Password;
 
 class SignupRequest extends Request
 {
@@ -21,7 +22,7 @@ class SignupRequest extends Request
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', Password::min(10)->letters()->numbers(), 'confirmed'],
         ];
     }
 }

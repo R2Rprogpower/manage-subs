@@ -11,6 +11,12 @@ class AuthSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->command?->warn('Skipping demo auth user in production.');
+
+            return;
+        }
+
         User::query()->firstOrCreate(
             ['email' => 'test@example.com'],
             [

@@ -12,7 +12,7 @@ interface TokenServiceInterface
     /**
      * @param  array<int, string>  $abilities
      */
-    public function issueToken(User $user, string $name, array $abilities = ['*']): string;
+    public function issueToken(User $user, string $name, array $abilities = ['api:access']): string;
 
     public function revokeCurrentToken(User $user, Request $request): void;
 

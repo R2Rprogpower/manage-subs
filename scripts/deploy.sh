@@ -183,8 +183,28 @@ fi
 
 DB_USERNAME_VALUE="$(grep -E '^DB_USERNAME=' "$ENV_SOURCE" | tail -n1 | cut -d'=' -f2- || true)"
 DB_PASSWORD_VALUE="$(grep -E '^DB_PASSWORD=' "$ENV_SOURCE" | tail -n1 | cut -d'=' -f2- || true)"
+PGADMIN_EMAIL_VALUE="$(grep -E '^PGADMIN_DEFAULT_EMAIL=' "$ENV_SOURCE" | tail -n1 | cut -d'=' -f2- || true)"
+PGADMIN_PASSWORD_VALUE="$(grep -E '^PGADMIN_DEFAULT_PASSWORD=' "$ENV_SOURCE" | tail -n1 | cut -d'=' -f2- || true)"
+PGADMIN_BASIC_AUTH_USER="$(grep -E '^PGADMIN_BASIC_AUTH_USER=' "$ENV_SOURCE" | tail -n1 | cut -d'=' -f2- || true)"
+PGADMIN_BASIC_AUTH_HASH="$(grep -E '^PGADMIN_BASIC_AUTH_HASH=' "$ENV_SOURCE" | tail -n1 | cut -d'=' -f2- || true)"
 if [[ -z "$DB_USERNAME_VALUE" ]]; then
   DB_USERNAME_VALUE="app"
+fi
+if [[ -z "$DB_PASSWORD_VALUE" || "$DB_PASSWORD_VALUE" == "app" ]]; then
+  echo "ERROR: production DB_PASSWORD must be set and must not use the development default." >&2
+  exit 1
+fi
+if [[ -z "$PGADMIN_EMAIL_VALUE" || "${PGADMIN_EMAIL_VALUE,,}" == "admin@example.com" ]]; then
+  echo "ERROR: PGADMIN_DEFAULT_EMAIL must be set to a non-placeholder address." >&2
+  exit 1
+fi
+if [[ ${#PGADMIN_PASSWORD_VALUE} -lt 16 || "$PGADMIN_PASSWORD_VALUE" == "admin" ]]; then
+  echo "ERROR: PGADMIN_DEFAULT_PASSWORD must contain at least 16 characters." >&2
+  exit 1
+fi
+if [[ -z "$PGADMIN_BASIC_AUTH_USER" || -z "$PGADMIN_BASIC_AUTH_HASH" ]]; then
+  echo "ERROR: PGADMIN_BASIC_AUTH_USER and PGADMIN_BASIC_AUTH_HASH are required." >&2
+  exit 1
 fi
 
 CURRENT_APP_KEY="$(grep -E '^APP_KEY=' "$ENV_SOURCE" | head -n1 | cut -d'=' -f2- || true)"
@@ -348,6 +368,9 @@ ${DOMAIN} {
 }
 
 ${PGADMIN_DOMAIN} {
+    basic_auth {
+        ${PGADMIN_BASIC_AUTH_USER} ${PGADMIN_BASIC_AUTH_HASH}
+    }
     reverse_proxy 127.0.0.1:${NEW_PGADMIN_PORT}
 }
 EOF

@@ -2,6 +2,15 @@
 
 ## Security notes
 
+### Application defaults
+
+- Production seed runs skip all demo users. Never depend on the example accounts outside local/testing environments.
+- Auth endpoints are rate limited by IP and, for login/MFA, by normalized email plus IP.
+- API tokens expire after `SANCTUM_TOKEN_EXPIRATION` minutes (8 hours by default) and use the `api:access` ability.
+- The browser login keeps bearer tokens in session storage only; closing the tab ends browser persistence.
+- Responses include HSTS on HTTPS, CSP, clickjacking, MIME-sniffing, referrer, and permissions headers.
+- Production forces secure session cookies, disables debug mode, and protects API documentation.
+
 ### OpenAPI docs security
 
 - Keep `SCRAMBLE_PROTECT_DOCS=true` in production.
@@ -18,9 +27,10 @@
 
 ### PgAdmin security
 
-- Use strong `PGADMIN_DEFAULT_PASSWORD`.
+- Use a unique `PGADMIN_DEFAULT_PASSWORD` of at least 16 characters.
+- Set `PGADMIN_BASIC_AUTH_USER` and a `PGADMIN_BASIC_AUTH_HASH` generated with `caddy hash-password`.
 - Restrict PgAdmin DNS to trusted admins when possible.
-- Optional hardening: additional Caddy auth or IP allowlist for pgadmin subdomain.
+- The deploy script refuses to continue when PgAdmin credentials or its Caddy Basic Auth are missing.
 
 ## Troubleshooting quick hits
 

@@ -28,7 +28,7 @@ class TokenServiceTest extends TestCase
 
         $user->shouldReceive('createToken')
             ->once()
-            ->with('api', ['*'])
+            ->with('api', ['api:access'])
             ->andReturn($newAccessToken);
 
         $service = new TokenService;

@@ -60,10 +60,14 @@ DB_PASSWORD=<strong-password>
 
 SCRAMBLE_PROTECT_DOCS=true
 
-PGADMIN_DEFAULT_EMAIL=admin@example.com
+PGADMIN_DEFAULT_EMAIL=ops@your-real-domain.tld
 PGADMIN_DEFAULT_PASSWORD=<strong-password>
+PGADMIN_BASIC_AUTH_USER=<separate-http-auth-user>
+PGADMIN_BASIC_AUTH_HASH=<output-of-caddy-hash-password>
 ACME_EMAIL=ops@example.com
 ```
+
+The deploy fails closed if the database password is missing/default, the pgAdmin password is shorter than 16 characters, or the additional pgAdmin Basic Auth credentials are absent. Generate the hash on the VPS with `caddy hash-password`; do not put the plaintext Basic Auth password in `.env`.
 
 ## Deploy commands
 
@@ -160,6 +164,9 @@ api.example.com {
 }
 
 pgadmin.example.com {
+    basic_auth {
+        admin <caddy-password-hash>
+    }
     reverse_proxy 127.0.0.1:15052
 }
 ```

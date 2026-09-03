@@ -82,13 +82,6 @@
                                             <div id="mfa-error" class="invalid-feedback d-block"></div>
                                         </div>
 
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="remember-check" name="remember">
-                                            <label class="form-check-label" for="remember-check">
-                                                Remember me
-                                            </label>
-                                        </div>
-
                                         <div class="mt-3 d-grid">
                                             <button id="login-submit" class="btn btn-primary waves-effect waves-light" type="submit">Log
                                                 In</button>

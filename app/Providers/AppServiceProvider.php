@@ -52,7 +52,10 @@ use App\Modules\Users\Contracts\Services\UserServiceInterface;
 use App\Modules\Users\Policies\UserPolicy;
 use App\Modules\Users\Repositories\UserRepository;
 use App\Modules\Users\Services\UserService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -96,6 +99,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('signup', fn (Request $request): Limit => Limit::perHour(5)->by($request->ip()));
+        RateLimiter::for('login', fn (Request $request): array => [
+            Limit::perMinute(10)->by($request->ip()),
+            Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip()),
+        ]);
+        RateLimiter::for('mfa', fn (Request $request): Limit => Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip()));
+
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Plan::class, PlanPolicy::class);
         Gate::policy(UserIdentity::class, UserIdentityPolicy::class);

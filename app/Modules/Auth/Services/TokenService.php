@@ -14,7 +14,7 @@ class TokenService implements TokenServiceInterface
     /**
      * @param  array<int, string>  $abilities
      */
-    public function issueToken(User $user, string $name, array $abilities = ['*']): string
+    public function issueToken(User $user, string $name, array $abilities = ['api:access']): string
     {
         return $user->createToken($name, $abilities)->plainTextToken;
     }

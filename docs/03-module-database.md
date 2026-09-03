@@ -19,3 +19,8 @@ docker compose exec -T app php artisan migrate
 docker compose exec -T app php artisan db:seed
 docker compose exec -T app php artisan migrate:fresh --seed
 ```
+
+LIVE LARA LOGS
+COLOR=$(cat /opt/app/.active)
+cd "/opt/app/$COLOR"
+tail -f storage/logs/laravel.log

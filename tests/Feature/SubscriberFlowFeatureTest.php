@@ -54,7 +54,10 @@ class SubscriberFlowFeatureTest extends TestCase
             'provider' => 'placeholder',
             'status' => 'simulated',
         ]);
-        $this->assertNull(Payment::query()->findOrFail(1)->paid_at);
+        $payment = Payment::query()
+            ->where('subscription_id', $subscriptionId)
+            ->firstOrFail();
+        $this->assertNull($payment->paid_at);
         Event::assertDispatched(SubscriptionAccessChanged::class, fn (SubscriptionAccessChanged $event): bool => $event->subscriptionId === $subscriptionId
             && $event->userId === $subscriber->id
             && $event->channelId === $channel->id

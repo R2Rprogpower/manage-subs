@@ -57,8 +57,8 @@ class RolesPermissionsFeatureTest extends TestCase
             'guard_name' => 'web',
         ]);
 
-        $permission = Permission::query()->create([
-            'name' => 'manage-users',
+        $permission = Permission::query()->firstOrCreate([
+            'name' => AppPermission::MANAGE_USERS->value,
             'guard_name' => 'web',
         ]);
 

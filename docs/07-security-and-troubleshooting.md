@@ -5,6 +5,7 @@
 ### Application defaults
 
 - Production seed runs skip all demo users. Never depend on the example accounts outside local/testing environments.
+- Production errors are written to both `storage/logs/laravel.log` and container stderr with full server-side stack traces. HTTP responses keep debug details hidden.
 - Auth endpoints are rate limited by IP and, for login/MFA, by normalized email plus IP.
 - API tokens expire after `SANCTUM_TOKEN_EXPIRATION` minutes (8 hours by default) and use the `api:access` ability.
 - The browser login keeps bearer tokens in session storage only; closing the tab ends browser persistence.
@@ -34,6 +35,7 @@
 
 ## Troubleshooting quick hits
 
+- Application returns HTTP 500: run `docker compose logs --tail=200 app` for the full exception and stack trace. Production also keeps the same error in `storage/logs/laravel.log`.
 - `address already in use :80`: stop host LiteSpeed/Nginx/Apache (`sudo systemctl stop lsws && sudo systemctl disable lsws`).
 - `Cannot connect to Docker daemon`: start Docker and ensure deploy user is in docker group.
 - `MissingAppKeyException`: deploy script auto-generates APP_KEY in `.env` if empty.

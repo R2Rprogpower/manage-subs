@@ -33,4 +33,18 @@ readonly class CreateSubscriptionDTO
             'source' => $this->source,
         ];
     }
+
+    public function withStatus(string $status): self
+    {
+        return new self(
+            userId: $this->userId,
+            planId: $this->planId,
+            status: $status,
+            startedAt: $this->startedAt,
+            endsAt: $this->endsAt,
+            autoRenew: $this->autoRenew,
+            trialUsed: $this->trialUsed,
+            source: $this->source,
+        );
+    }
 }

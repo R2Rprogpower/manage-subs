@@ -12,6 +12,7 @@ use App\Models\Subscription;
 use App\Models\TelegramChannel;
 use App\Models\User;
 use App\Modules\Plans\Contracts\Repositories\PlanRepositoryInterface;
+use App\Modules\Plans\Enums\PlanKind;
 use App\Modules\Subscriptions\Contracts\Repositories\SubscriptionRepositoryInterface;
 use App\Modules\Subscriptions\Contracts\Services\SubscriptionServiceInterface;
 use App\Modules\Subscriptions\DTO\CreateSubscriptionDTO;
@@ -51,7 +52,13 @@ class SubscriptionService implements SubscriptionServiceInterface
 
     public function create(CreateSubscriptionDTO $dto): Subscription
     {
-        return $this->subscriptionRepository->create($dto);
+        if ($dto->status !== SubscriptionStatus::ACTIVE->value) {
+            return $this->subscriptionRepository->create($dto);
+        }
+
+        $subscription = $this->subscriptionRepository->create($dto->withStatus(SubscriptionStatus::PENDING->value));
+
+        return $this->transition($subscription, SubscriptionStatus::ACTIVE, 'subscription_activated', null);
     }
 
     public function subscribeWithPlaceholder(int $userId, int $planId): Subscription
@@ -61,6 +68,9 @@ class SubscriptionService implements SubscriptionServiceInterface
             throw new UnprocessableEntityException('Subscription type is unavailable.');
         }
         $channel = $plan->telegramChannel;
+        if ($plan->kind !== PlanKind::MONEY->value) {
+            throw new UnprocessableEntityException('Achievement subscriptions are not automated in the MVP.');
+        }
         if ($channel->status !== 'active') {
             throw new UnprocessableEntityException('Telegram channel is unavailable.');
         }
@@ -81,7 +91,7 @@ class SubscriptionService implements SubscriptionServiceInterface
             $subscription = $this->subscriptionRepository->create(new CreateSubscriptionDTO(
                 userId: $user->id,
                 planId: $plan->id,
-                status: SubscriptionStatus::ACTIVE->value,
+                status: SubscriptionStatus::PENDING->value,
                 startedAt: $startedAt->toIso8601String(),
                 endsAt: $endsAt?->toIso8601String(),
                 autoRenew: false,
@@ -103,17 +113,24 @@ class SubscriptionService implements SubscriptionServiceInterface
                 actor: $user,
                 subscription: $subscription,
                 action: 'subscription_placeholder_confirmed',
-                newValue: ['status' => $subscription->status, 'provider' => 'placeholder'],
+                newValue: ['status' => SubscriptionStatus::PENDING->value, 'provider' => 'placeholder'],
             );
 
-            $this->dispatchAccessChanged($subscription);
-
-            return $subscription->refresh()->load(['user', 'plan.telegramChannel', 'payments']);
+            return $this->transition(
+                subscription: $subscription,
+                target: SubscriptionStatus::ACTIVE,
+                action: 'subscription_activated_after_placeholder',
+                actorId: $user->id,
+            );
         });
     }
 
     public function update(int $id, UpdateSubscriptionDTO $dto): Subscription
     {
+        if (array_key_exists('status', $dto->toArray())) {
+            throw new UnprocessableEntityException('Use a lifecycle action to change subscription status.');
+        }
+
         $subscription = $this->requireSubscription($id);
         $this->subscriptionRepository->update($subscription, $dto);
 
@@ -139,12 +156,7 @@ class SubscriptionService implements SubscriptionServiceInterface
     {
         $subscriptions = $this->subscriptionRepository->findLapsedActive($at);
         foreach ($subscriptions as $subscription) {
-            $this->subscriptionRepository->update($subscription, new UpdateSubscriptionDTO([
-                'status' => SubscriptionStatus::EXPIRED->value,
-                'auto_renew' => false,
-            ]));
-            $subscription->refresh()->load('plan');
-            $this->dispatchAccessChanged($subscription);
+            $this->transition($subscription, SubscriptionStatus::EXPIRED, 'subscription_expired', null, ['auto_renew' => false]);
         }
 
         return $subscriptions->count();
@@ -157,7 +169,7 @@ class SubscriptionService implements SubscriptionServiceInterface
             throw new ConflictException('Subscription is already active.');
         }
 
-        $changes = ['status' => SubscriptionStatus::ACTIVE->value];
+        $changes = [];
         if ($subscription->ends_at !== null && $subscription->ends_at->isPast()) {
             $durationDays = $subscription->plan?->duration_days;
             $changes['ends_at'] = $durationDays !== null
@@ -165,17 +177,34 @@ class SubscriptionService implements SubscriptionServiceInterface
                 : null;
         }
 
-        return $this->changeLifecycle($subscription, $changes, 'subscription_activated', $actorId);
+        return $this->transition($subscription, SubscriptionStatus::ACTIVE, 'subscription_activated', $actorId, $changes);
+    }
+
+    public function markPendingSubscription(int $subscriptionId, ?int $actorId = null): Subscription
+    {
+        return $this->transition(
+            $this->requireSubscription($subscriptionId),
+            SubscriptionStatus::PENDING,
+            'subscription_marked_pending',
+            $actorId,
+        );
+    }
+
+    public function suspendSubscription(int $subscriptionId, ?int $actorId = null): Subscription
+    {
+        return $this->transition(
+            $this->requireSubscription($subscriptionId),
+            SubscriptionStatus::SUSPENDED,
+            'subscription_suspended',
+            $actorId,
+        );
     }
 
     public function cancelSubscription(int $subscriptionId, ?int $actorId = null): Subscription
     {
         $subscription = $this->requireSubscription($subscriptionId);
-        if ($subscription->status !== SubscriptionStatus::ACTIVE->value) {
-            throw new ConflictException('Only an active subscription can be cancelled.');
-        }
 
-        return $this->changeLifecycle($subscription, ['status' => SubscriptionStatus::CANCELLED->value, 'auto_renew' => false], 'subscription_cancelled', $actorId);
+        return $this->transition($subscription, SubscriptionStatus::CANCELLED, 'subscription_cancelled', $actorId, ['auto_renew' => false]);
     }
 
     public function renewSubscription(int $subscriptionId, ?DateTimeInterface $newEndsAt = null, ?int $actorId = null): Subscription
@@ -189,7 +218,7 @@ class SubscriptionService implements SubscriptionServiceInterface
         $base = $subscription->ends_at !== null && $subscription->ends_at->isFuture() ? $subscription->ends_at->copy() : now();
         $endsAt = $newEndsAt !== null ? Carbon::instance(\DateTime::createFromInterface($newEndsAt)) : $base->addDays((int) $durationDays);
 
-        return $this->changeLifecycle($subscription, ['status' => SubscriptionStatus::ACTIVE->value, 'ends_at' => $endsAt->toIso8601String()], 'subscription_renewed', $actorId);
+        return $this->transition($subscription, SubscriptionStatus::ACTIVE, 'subscription_renewed', $actorId, ['ends_at' => $endsAt->toIso8601String()]);
     }
 
     public function grantFreeAccess(int $userId, int $planId, ?int $actorId = null): Subscription
@@ -206,7 +235,7 @@ class SubscriptionService implements SubscriptionServiceInterface
         $subscription = $this->subscriptionRepository->create(new CreateSubscriptionDTO(
             userId: $userId,
             planId: $planId,
-            status: SubscriptionStatus::ACTIVE->value,
+            status: SubscriptionStatus::PENDING->value,
             startedAt: $startedAt->toIso8601String(),
             endsAt: $plan->duration_days !== null ? $startedAt->copy()->addDays($plan->duration_days)->toIso8601String() : null,
             autoRenew: false,
@@ -219,9 +248,7 @@ class SubscriptionService implements SubscriptionServiceInterface
             $this->auditLogService->logSubscriptionAction($actor, $subscription, 'subscription_free_access_granted', newValue: ['status' => $subscription->status]);
         }
 
-        $this->dispatchAccessChanged($subscription);
-
-        return $subscription;
+        return $this->transition($subscription, SubscriptionStatus::ACTIVE, 'subscription_free_access_activated', $actorId);
     }
 
     public function syncChannelAccessForUser(int $userId, int $channelId, ?DateTimeInterface $at = null): bool
@@ -240,9 +267,26 @@ class SubscriptionService implements SubscriptionServiceInterface
     }
 
     /** @param array<string, mixed> $changes */
-    private function changeLifecycle(Subscription $subscription, array $changes, string $action, ?int $actorId): Subscription
+    private function transition(Subscription $subscription, SubscriptionStatus $target, string $action, ?int $actorId, array $changes = []): Subscription
     {
+        $current = SubscriptionStatus::from($subscription->status);
+        if (! $current->canTransitionTo($target)) {
+            throw new ConflictException("Subscription cannot transition from {$current->value} to {$target->value}.");
+        }
+
         $previous = ['status' => $subscription->status, 'ends_at' => $subscription->ends_at?->toIso8601String()];
+        $changes['status'] = $target->value;
+        if ($target === SubscriptionStatus::ACTIVE) {
+            if ($current !== SubscriptionStatus::ACTIVE || $subscription->activated_at === null) {
+                $changes['activated_at'] = now()->toIso8601String();
+            }
+            $changes['suspended_at'] = null;
+            $changes['cancelled_at'] = null;
+        } elseif ($target === SubscriptionStatus::SUSPENDED) {
+            $changes['suspended_at'] = now()->toIso8601String();
+        } elseif ($target === SubscriptionStatus::CANCELLED) {
+            $changes['cancelled_at'] = now()->toIso8601String();
+        }
 
         return DB::transaction(function () use ($subscription, $changes, $action, $actorId, $previous): Subscription {
             $this->subscriptionRepository->update($subscription, new UpdateSubscriptionDTO($changes));

@@ -24,11 +24,16 @@ class SubscriptionFactory extends Factory
         $startedAt = fake()->dateTimeBetween('-30 days', 'now');
         $endsAt = fake()->boolean(80) ? fake()->dateTimeBetween($startedAt, '+1 year') : null;
 
+        $status = fake()->randomElement(['draft', 'pending', 'active', 'suspended', 'expired', 'cancelled']);
+
         return [
             'user_id' => User::factory(),
             'plan_id' => Plan::factory(),
-            'status' => fake()->randomElement(['active', 'expired', 'cancelled']),
+            'status' => $status,
             'started_at' => $startedAt,
+            'activated_at' => $status === 'active' ? $startedAt : null,
+            'suspended_at' => $status === 'suspended' ? now() : null,
+            'cancelled_at' => $status === 'cancelled' ? now() : null,
             'ends_at' => $endsAt,
             'auto_renew' => fake()->boolean(),
             'trial_used' => fake()->boolean(),

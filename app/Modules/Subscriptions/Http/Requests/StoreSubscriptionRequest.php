@@ -25,7 +25,11 @@ class StoreSubscriptionRequest extends Request
         return [
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
-            'status' => ['required', 'string', Rule::in(SubscriptionStatus::values())],
+            'status' => ['required', 'string', Rule::in([
+                SubscriptionStatus::DRAFT->value,
+                SubscriptionStatus::PENDING->value,
+                SubscriptionStatus::ACTIVE->value,
+            ])],
             'started_at' => ['required', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:started_at'],
             'auto_renew' => ['required', 'boolean'],

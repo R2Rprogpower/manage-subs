@@ -7,6 +7,8 @@ namespace Tests\Feature;
 use App\Models\Plan;
 use App\Models\TelegramChannel;
 use App\Models\User;
+use App\Models\UserIdentity;
+use App\Modules\Channels\Database\Seeders\TelegramTestDataSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -65,6 +67,7 @@ class ChannelFeatureTest extends TestCase
             'telegram_channel_id' => $channel->id,
             'code' => 'channel_monthly',
             'name' => 'Monthly',
+            'kind' => 'money',
             'price_minor' => 990,
             'currency' => 'USD',
             'duration_days' => 30,
@@ -89,5 +92,38 @@ class ChannelFeatureTest extends TestCase
             'telegram_chat_id' => $channel->telegram_chat_id,
             'title' => 'Duplicate',
         ])->assertUnprocessable();
+    }
+
+    public function test_telegram_test_data_seeder_is_idempotent(): void
+    {
+        $owner = User::factory()->create(['email' => 'fixture-owner@example.test']);
+        config([
+            'telegram.test_data.enabled' => true,
+            'telegram.test_data.owner_email' => $owner->email,
+            'telegram.test_data.group.chat_id' => '-1009999999999',
+            'telegram.test_data.group.username' => '@fixture_group',
+            'telegram.test_data.group.title' => 'Fixture Group',
+            'telegram.test_data.bot.telegram_id' => '99887766',
+            'telegram.test_data.bot.username' => '@fixture_bot',
+            'telegram.test_data.bot.name' => 'Fixture Bot',
+            'telegram.test_data.bot.email' => 'fixture-bot@example.test',
+        ]);
+
+        $this->seed(TelegramTestDataSeeder::class);
+        $this->seed(TelegramTestDataSeeder::class);
+
+        $this->assertDatabaseCount('telegram_channels', 1);
+        $this->assertDatabaseHas('telegram_channels', [
+            'owner_id' => $owner->id,
+            'telegram_chat_id' => '-1009999999999',
+            'username' => 'fixture_group',
+            'status' => 'active',
+        ]);
+        $this->assertDatabaseCount('user_identities', 1);
+
+        $identity = UserIdentity::query()->firstOrFail();
+        $this->assertSame('99887766', $identity->provider_user_id);
+        $this->assertSame('fixture_bot', $identity->username);
+        $this->assertTrue((bool) $identity->meta['is_bot']);
     }
 }

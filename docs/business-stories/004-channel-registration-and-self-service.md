@@ -18,9 +18,12 @@ and see my own subscriptions.
   have an administrative permission.
 - A channel appears in the catalog only when it is active and has at least one
   active subscription type.
+- Subscription types have an explicit `money` or `achievement` kind; achievement
+  automation remains deferred.
 - A subscriber cannot hold two simultaneously active subscriptions for one
   channel.
-- Checkout is a payment placeholder and activates the subscription immediately.
+- Money checkout moves the subscription from pending to active after recording a
+  simulated payment placeholder; no payment credentials are accepted.
 - Subscription state and validity dates determine channel access.
 - A subscriber can list only their own subscriptions through the self-service
   endpoint.
@@ -29,6 +32,7 @@ and see my own subscriptions.
 
 - `GET /api/channels/available`
 - `GET|POST|PATCH|DELETE /api/channels`
+- `GET|POST|PATCH|DELETE /api/plans`
 - `POST /api/subscriptions/checkout`
 - `GET /api/subscriptions/mine`
 
@@ -37,3 +41,4 @@ and see my own subscriptions.
 - Telegram Bot API delivery or membership reconciliation.
 - Channel moderation and manual review.
 - Real payments.
+- Achievement verification and automation.

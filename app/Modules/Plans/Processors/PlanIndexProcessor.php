@@ -6,6 +6,7 @@ namespace App\Modules\Plans\Processors;
 
 use App\Core\Abstracts\Processor;
 use App\Models\Plan;
+use App\Models\User;
 use App\Modules\Plans\Contracts\Services\PlanServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -18,8 +19,8 @@ class PlanIndexProcessor extends Processor
     /**
      * @return Collection<int, Plan>
      */
-    public function execute(): Collection
+    public function execute(User $user): Collection
     {
-        return $this->planService->findAll();
+        return $this->planService->findVisibleTo($user);
     }
 }

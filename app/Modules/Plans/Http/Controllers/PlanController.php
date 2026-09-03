@@ -6,9 +6,11 @@ namespace App\Modules\Plans\Http\Controllers;
 
 use App\Core\Responses\SuccessResponse;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\Plans\Http\Requests\DeletePlanRequest;
 use App\Modules\Plans\Http\Requests\StorePlanRequest;
 use App\Modules\Plans\Http\Requests\UpdatePlanRequest;
+use App\Modules\Plans\Http\Requests\ViewPlanRequest;
 use App\Modules\Plans\Presentations\PlanDestroyPresentation;
 use App\Modules\Plans\Presentations\PlanIndexPresentation;
 use App\Modules\Plans\Presentations\PlanPresentation;
@@ -17,18 +19,26 @@ use App\Modules\Plans\Processors\PlanIndexProcessor;
 use App\Modules\Plans\Processors\PlanShowProcessor;
 use App\Modules\Plans\Processors\PlanStoreProcessor;
 use App\Modules\Plans\Processors\PlanUpdateProcessor;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class PlanController extends Controller
 {
     public function index(
+        Request $request,
         PlanIndexProcessor $processor,
         PlanIndexPresentation $presentation
     ): SuccessResponse {
-        return new SuccessResponse($presentation->present($processor->execute()));
+        $user = $request->user();
+        if (! $user instanceof User) {
+            abort(401);
+        }
+
+        return new SuccessResponse($presentation->present($processor->execute($user)));
     }
 
     public function show(
+        ViewPlanRequest $request,
         PlanShowProcessor $processor,
         PlanPresentation $presentation,
         int $id

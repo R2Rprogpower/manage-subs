@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Plans\Contracts\Services;
 
 use App\Models\Plan;
+use App\Models\User;
 use App\Modules\Plans\DTO\CreatePlanDTO;
 use App\Modules\Plans\DTO\UpdatePlanDTO;
 use Illuminate\Database\Eloquent\Collection;
@@ -15,6 +16,9 @@ interface PlanServiceInterface
      * @return Collection<int, Plan>
      */
     public function findAll(): Collection;
+
+    /** @return Collection<int, Plan> */
+    public function findVisibleTo(User $user): Collection;
 
     public function findById(int $id): ?Plan;
 

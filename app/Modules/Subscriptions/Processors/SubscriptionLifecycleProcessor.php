@@ -20,9 +20,19 @@ class SubscriptionLifecycleProcessor extends Processor
         return $this->service->activateSubscription($id, $this->actorId($request));
     }
 
+    public function pending(ManageSubscriptionRequest $request, int $id): Subscription
+    {
+        return $this->service->markPendingSubscription($id, $this->actorId($request));
+    }
+
     public function cancel(ManageSubscriptionRequest $request, int $id): Subscription
     {
         return $this->service->cancelSubscription($id, $this->actorId($request));
+    }
+
+    public function suspend(ManageSubscriptionRequest $request, int $id): Subscription
+    {
+        return $this->service->suspendSubscription($id, $this->actorId($request));
     }
 
     public function renew(ManageSubscriptionRequest $request, int $id): Subscription

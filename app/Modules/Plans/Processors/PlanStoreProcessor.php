@@ -9,6 +9,7 @@ use App\Core\Abstracts\Request as BaseRequest;
 use App\Models\Plan;
 use App\Modules\Plans\Contracts\Services\PlanServiceInterface;
 use App\Modules\Plans\DTO\CreatePlanDTO;
+use App\Modules\Plans\Enums\PlanKind;
 
 class PlanStoreProcessor extends Processor
 {
@@ -24,9 +25,11 @@ class PlanStoreProcessor extends Processor
             telegramChannelId: (int) $validated['telegram_channel_id'],
             code: $validated['code'],
             name: $validated['name'],
-            priceMinor: (int) $validated['price_minor'],
-            currency: $validated['currency'],
+            kind: $validated['kind'],
+            priceMinor: (int) ($validated['price_minor'] ?? 0),
+            currency: $validated['currency'] ?? 'USD',
             durationDays: isset($validated['duration_days']) ? (int) $validated['duration_days'] : null,
+            configuration: $validated['configuration'] ?? ($validated['kind'] === PlanKind::ACHIEVEMENT->value ? [] : null),
             isActive: (bool) $validated['is_active'],
         ));
     }

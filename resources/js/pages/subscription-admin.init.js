@@ -53,6 +53,14 @@
         return '<span class="badge bg-' + color + '">' + escapeHtml(status) + '</span>';
     }
 
+    function syncPlanKindFields(kind) {
+        var achievement = kind === 'achievement';
+        document.getElementById('achievement-configuration').classList.toggle('d-none', !achievement);
+        document.querySelector('[name="achievement_key"]').required = achievement;
+        document.querySelector('[name="price_minor"]').required = !achievement;
+        document.querySelector('[name="currency"]').required = !achievement;
+    }
+
     function renderCatalog() {
         var target = document.getElementById('catalog-list');
         if (!state.catalog.length) {
@@ -61,8 +69,11 @@
         }
         target.innerHTML = state.catalog.map(function (channel) {
             var plans = channel.plans.map(function (plan) {
-                var price = (plan.price_minor / 100).toFixed(2) + ' ' + plan.currency;
-                return '<div class="d-flex justify-content-between align-items-center border-top py-3"><div><strong>' + escapeHtml(plan.name) + '</strong><br><span class="text-muted">' + price + ' · ' + (plan.duration_days ? plan.duration_days + ' days' : 'unlimited') + '</span></div><button class="btn btn-primary btn-sm subscribe-button" data-plan-id="' + plan.id + '">Subscribe</button></div>';
+                var price = plan.kind === 'money' ? (plan.price_minor / 100).toFixed(2) + ' ' + plan.currency : 'Achievement';
+                var action = plan.kind === 'money'
+                    ? '<button class="btn btn-primary btn-sm subscribe-button" data-plan-id="' + plan.id + '">Subscribe</button>'
+                    : '<button class="btn btn-light btn-sm" disabled>Coming later</button>';
+                return '<div class="d-flex justify-content-between align-items-center border-top py-3"><div><strong>' + escapeHtml(plan.name) + '</strong><br><span class="text-muted">' + escapeHtml(plan.kind) + ' · ' + price + ' · ' + (plan.duration_days ? plan.duration_days + ' days' : 'unlimited') + '</span></div>' + action + '</div>';
             }).join('');
             return '<div class="col-4"><div class="card channel-card"><div class="card-body"><div class="d-flex align-items-center mb-3"><div class="avatar-sm me-3"><span class="avatar-title rounded-circle bg-primary-subtle text-primary"><i class="bx bxl-telegram font-size-24"></i></span></div><div><h5 class="mb-0">' + escapeHtml(channel.title) + '</h5><span class="text-muted">' + (channel.username ? '@' + escapeHtml(channel.username) : escapeHtml(channel.telegram_chat_id)) + '</span></div></div><p class="text-muted">' + escapeHtml(channel.description || 'No description') + '</p>' + plans + '</div></div></div>';
         }).join('');
@@ -81,17 +92,21 @@
 
         document.getElementById('plan-channel').innerHTML = '<option value="">Choose channel</option>' + state.channels.map(function (channel) { return '<option value="' + channel.id + '">' + escapeHtml(channel.title) + '</option>'; }).join('');
         document.getElementById('plans-body').innerHTML = state.plans.map(function (plan) {
-            return '<tr><td>' + escapeHtml(plan.channel ? plan.channel.title : 'Unassigned') + '</td><td><strong>' + escapeHtml(plan.name) + '</strong><br><small class="text-muted">' + escapeHtml(plan.code) + '</small></td><td>' + (plan.price_minor / 100).toFixed(2) + ' ' + escapeHtml(plan.currency) + '</td><td>' + (plan.duration_days ? plan.duration_days + ' days' : 'Unlimited') + '</td><td>' + statusBadge(plan.is_active ? 'active' : 'inactive') + '</td></tr>';
-        }).join('') || '<tr><td colspan="5" class="text-center text-muted">No subscription types.</td></tr>';
+            var price = plan.kind === 'money' ? (plan.price_minor / 100).toFixed(2) + ' ' + escapeHtml(plan.currency) : '—';
+            return '<tr><td>' + escapeHtml(plan.channel ? plan.channel.title : 'Unassigned') + '</td><td><strong>' + escapeHtml(plan.name) + '</strong><br><small class="text-muted">' + escapeHtml(plan.code) + '</small></td><td>' + escapeHtml(plan.kind) + '</td><td>' + price + '</td><td>' + (plan.duration_days ? plan.duration_days + ' days' : 'Unlimited') + '</td><td>' + statusBadge(plan.is_active ? 'active' : 'inactive') + '</td></tr>';
+        }).join('') || '<tr><td colspan="6" class="text-center text-muted">No subscription types.</td></tr>';
 
         if (!isAdmin) { return; }
         document.getElementById('grant-user').innerHTML = '<option value="">Choose user</option>' + state.users.map(function (item) { return '<option value="' + item.id + '">' + escapeHtml(item.name + ' · ' + item.email) + '</option>'; }).join('');
         document.getElementById('grant-plan').innerHTML = '<option value="">Choose type</option>' + state.plans.filter(function (plan) { return plan.is_active && plan.telegram_channel_id; }).map(function (plan) { return '<option value="' + plan.id + '">' + escapeHtml((plan.channel ? plan.channel.title + ' · ' : '') + plan.name) + '</option>'; }).join('');
         document.getElementById('subscriptions-body').innerHTML = state.subscriptions.map(function (subscription) {
             var actions = '<div class="btn-group btn-group-sm">';
-            if (!subscription.has_access) { actions += '<button class="btn btn-outline-success lifecycle-button" data-action="activate" data-id="' + subscription.id + '">Activate</button>'; }
-            if (subscription.status === 'active') { actions += '<button class="btn btn-outline-danger lifecycle-button" data-action="cancel" data-id="' + subscription.id + '">Cancel</button>'; }
-            actions += '<button class="btn btn-outline-primary lifecycle-button" data-action="renew" data-id="' + subscription.id + '">Renew</button></div>';
+            if (subscription.status === 'draft') { actions += '<button class="btn btn-outline-primary lifecycle-button" data-action="pending" data-id="' + subscription.id + '">Submit</button>'; }
+            if (['pending', 'suspended', 'cancelled', 'expired'].indexOf(subscription.status) !== -1) { actions += '<button class="btn btn-outline-success lifecycle-button" data-action="activate" data-id="' + subscription.id + '">Activate</button>'; }
+            if (subscription.status === 'active') { actions += '<button class="btn btn-outline-warning lifecycle-button" data-action="suspend" data-id="' + subscription.id + '">Suspend</button>'; }
+            if (['draft', 'pending', 'active', 'suspended'].indexOf(subscription.status) !== -1) { actions += '<button class="btn btn-outline-danger lifecycle-button" data-action="cancel" data-id="' + subscription.id + '">Cancel</button>'; }
+            if (['active', 'cancelled', 'expired'].indexOf(subscription.status) !== -1) { actions += '<button class="btn btn-outline-primary lifecycle-button" data-action="renew" data-id="' + subscription.id + '">Renew</button>'; }
+            actions += '</div>';
             return '<tr><td>' + escapeHtml(subscription.user ? subscription.user.email : subscription.user_id) + '</td><td>' + escapeHtml(subscription.channel ? subscription.channel.title : '—') + '</td><td>' + escapeHtml(subscription.plan ? subscription.plan.name : '—') + '</td><td>' + statusBadge(subscription.status) + '</td><td>' + (subscription.has_access ? 'Allowed' : 'Denied') + '</td><td>' + formatDate(subscription.ends_at) + '</td><td>' + actions + '</td></tr>';
         }).join('') || '<tr><td colspan="7" class="text-center text-muted">No subscriptions.</td></tr>';
     }
@@ -145,8 +160,14 @@
 
     document.getElementById('plan-form').addEventListener('submit', async function (event) {
         event.preventDefault(); var data = Object.fromEntries(new FormData(event.target).entries());
-        data.telegram_channel_id = Number(data.telegram_channel_id); data.price_minor = Number(data.price_minor); data.is_active = true; data.duration_days = data.duration_days ? Number(data.duration_days) : null;
-        try { await api('/api/plans', { method: 'POST', body: JSON.stringify(data) }); event.target.reset(); showAlert('Subscription type added.'); await loadData(); } catch (error) { showAlert(error.message, 'danger'); }
+        data.telegram_channel_id = Number(data.telegram_channel_id); data.is_active = true; data.duration_days = data.duration_days ? Number(data.duration_days) : null;
+        if (data.kind === 'achievement') { data.configuration = { achievement_key: data.achievement_key }; delete data.price_minor; delete data.currency; } else { data.price_minor = Number(data.price_minor); data.configuration = null; }
+        delete data.achievement_key;
+        try { await api('/api/plans', { method: 'POST', body: JSON.stringify(data) }); event.target.reset(); syncPlanKindFields('money'); showAlert('Subscription type added.'); await loadData(); } catch (error) { showAlert(error.message, 'danger'); }
+    });
+
+    document.getElementById('plan-kind').addEventListener('change', function (event) {
+        syncPlanKindFields(event.target.value);
     });
 
     document.getElementById('grant-free-form').addEventListener('submit', async function (event) {

@@ -43,9 +43,12 @@ class SubscriptionFeatureTest extends TestCase
         $id = (int) $storeResponse->json('data.id');
 
         $this->patchJson("/api/subscriptions/{$id}", [
-            'status' => 'cancelled',
             'auto_renew' => false,
-        ])->assertOk()->assertJsonPath('data.status', 'cancelled');
+        ])->assertOk()->assertJsonPath('data.status', 'active');
+
+        $this->patchJson("/api/subscriptions/{$id}", [
+            'status' => 'cancelled',
+        ])->assertUnprocessable();
 
         $this->getJson("/api/subscriptions/{$id}")
             ->assertOk()
@@ -94,6 +97,44 @@ class SubscriptionFeatureTest extends TestCase
             'target_type' => 'subscription',
             'target_id' => $subscription->id,
         ]);
+    }
+
+    public function test_manager_can_suspend_and_reactivate_subscription_through_lifecycle_actions(): void
+    {
+        $manager = $this->createManagerUser(SubscriptionPermission::values());
+        Sanctum::actingAs($manager);
+        $subscription = Subscription::factory()->create([
+            'status' => 'active',
+            'activated_at' => now(),
+            'ends_at' => now()->addMonth(),
+        ]);
+
+        $this->postJson("/api/subscriptions/{$subscription->id}/suspend")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'suspended')
+            ->assertJsonPath('data.has_access', false);
+
+        $this->postJson("/api/subscriptions/{$subscription->id}/activate")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('data.has_access', true);
+    }
+
+    public function test_draft_must_move_through_pending_before_activation(): void
+    {
+        $manager = $this->createManagerUser(SubscriptionPermission::values());
+        Sanctum::actingAs($manager);
+        $subscription = Subscription::factory()->create(['status' => 'draft']);
+
+        $this->postJson("/api/subscriptions/{$subscription->id}/activate")->assertConflict();
+        $this->postJson("/api/subscriptions/{$subscription->id}/pending")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'pending')
+            ->assertJsonPath('data.has_access', false);
+        $this->postJson("/api/subscriptions/{$subscription->id}/activate")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('data.has_access', true);
     }
 
     public function test_user_without_permission_cannot_list_all_subscriptions(): void

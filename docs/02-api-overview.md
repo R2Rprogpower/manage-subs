@@ -25,11 +25,13 @@ All API routes are loaded from module route files via `routes/api.php`:
 - Permissions: `/api/permissions...`
 - Owner channels: `/api/channels...`
 - Available channel catalog: `GET /api/channels/available`
-- Channel subscription types: `/api/plans...`
+- Owner-scoped channel subscription types (`money` or `achievement`): `/api/plans...`
 - Subscriber checkout placeholder: `POST /api/subscriptions/checkout`
 - Subscriber-owned list: `GET /api/subscriptions/mine`
-- Administrative subscription lifecycle: `/api/subscriptions/{id}/activate`,
-  `/cancel`, and `/renew`
+- Administrative subscription lifecycle: `/api/subscriptions/{id}/pending`,
+  `/activate`, `/suspend`, `/cancel`, and `/renew`
+
+The MVP checkout accepts only an enabled `money` type, records a simulated placeholder payment, and activates the subscription without collecting payment credentials. Achievement types can be configured but their automation and checkout are deferred.
 
 ## Postman
 

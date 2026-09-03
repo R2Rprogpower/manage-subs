@@ -30,10 +30,6 @@ class SubscriptionUpdateProcessor extends Processor
             $data['plan_id'] = (int) $validated['plan_id'];
         }
 
-        if (array_key_exists('status', $validated)) {
-            $data['status'] = $validated['status'];
-        }
-
         if (array_key_exists('started_at', $validated)) {
             $data['started_at'] = $validated['started_at'];
         }

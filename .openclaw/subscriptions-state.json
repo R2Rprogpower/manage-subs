@@ -1,0 +1,106 @@
+{
+  "feature": "telegram-channel-subscriptions",
+  "status": "implemented_pending_rebuild",
+  "docker_allowed": false,
+  "current_story": null,
+  "stories": {
+    "C-001": {
+      "status": "validation_pending",
+      "attempts": 2,
+      "dependencies": [],
+      "files": [
+        "app/Modules/Channels",
+        "app/Models/TelegramChannel.php",
+        "app/Modules/Channels/Database/Seeders/TelegramTestDataSeeder.php",
+        "config/telegram.php",
+        "database/factories/TelegramChannelFactory.php",
+        "tests/Feature/ChannelFeatureTest.php"
+      ],
+      "validation": "pending_manual_validation"
+    },
+    "C-002": {
+      "status": "validation_pending",
+      "attempts": 1,
+      "dependencies": ["C-001"],
+      "files": [
+        "app/Modules/Plans",
+        "app/Models/Plan.php",
+        "database/factories/PlanFactory.php",
+        "tests/Feature/PlanFeatureTest.php"
+      ],
+      "validation": "pending_manual_validation"
+    },
+    "U-001": {
+      "status": "validation_pending",
+      "attempts": 1,
+      "dependencies": ["C-001", "C-002"],
+      "files": ["app/Modules/Subscriptions", "tests/Feature/SubscriberFlowFeatureTest.php"],
+      "validation": "pending_manual_validation"
+    },
+    "U-002": {
+      "status": "validation_pending",
+      "attempts": 1,
+      "dependencies": ["U-001"],
+      "files": ["app/Modules/Subscriptions/Processors/SubscriptionMineProcessor.php", "resources/js/pages/subscription-admin.init.js"],
+      "validation": "pending_manual_validation"
+    },
+    "U-003": {
+      "status": "deferred",
+      "attempts": 0,
+      "dependencies": [],
+      "files": ["app/Modules/Subscriptions/Events/SubscriptionAccessChanged.php"],
+      "validation": "not_required"
+    },
+    "C-003": {
+      "status": "validation_pending",
+      "attempts": 1,
+      "dependencies": ["C-002"],
+      "files": [
+        "app/Modules/Subscriptions/Services/SubscriptionService.php",
+        "app/Models/Payment.php",
+        "tests/Feature/SubscriberFlowFeatureTest.php"
+      ],
+      "validation": "pending_manual_validation"
+    },
+    "C-004": {
+      "status": "deferred",
+      "attempts": 0,
+      "dependencies": ["C-002"],
+      "files": [],
+      "validation": "not_required"
+    }
+  },
+  "pending_manual_validation": [
+    {
+      "type": "pending_manual_validation",
+      "reason": "Host PHP 8.3.6 cannot load dependencies requiring PHP >= 8.4.1; user rebuild is required.",
+      "command": "php artisan migrate --force"
+    },
+    {
+      "type": "pending_manual_validation",
+      "reason": "Seed permissions, configured Telegram group/bot fixtures, and demo subscription types after migrations.",
+      "command": "php artisan db:seed --force"
+    },
+    {
+      "type": "pending_manual_validation",
+      "reason": "Feature tests require the rebuilt PHP >= 8.4.1 application environment.",
+      "command": "php artisan test --filter='ChannelFeatureTest|PlanFeatureTest|SubscriberFlowFeatureTest|SubscriptionFeatureTest'"
+    },
+    {
+      "type": "pending_manual_validation",
+      "reason": "PHPStan requires the rebuilt PHP >= 8.4.1 application environment.",
+      "command": "vendor/bin/phpstan analyse"
+    }
+  ],
+  "blocked": [],
+  "decisions": [
+    "Reuse plans as subscription types with money and achievement kinds.",
+    "Only active subscription state grants access.",
+    "Payments remain a non-authoritative simulated placeholder.",
+    "Achievement types are configurable and visible, but achievement checkout and verification remain deferred.",
+    "Docker must not be used.",
+    "Represent the non-production test bot as a User plus Telegram UserIdentity; never seed a bot token."
+  ],
+  "last_completed_action": "Added and statically validated idempotent configurable non-production fixtures for the test Telegram group and bot identity.",
+  "next_action": "User sets TELEGRAM_TEST_* values, rebuilds, and runs migrations, seeders, targeted feature tests, and PHPStan."
+}

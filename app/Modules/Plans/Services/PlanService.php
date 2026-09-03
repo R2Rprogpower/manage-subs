@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Plans\Services;
 
 use App\Models\Plan;
+use App\Models\User;
 use App\Modules\Plans\Contracts\Repositories\PlanRepositoryInterface;
 use App\Modules\Plans\Contracts\Services\PlanServiceInterface;
 use App\Modules\Plans\DTO\CreatePlanDTO;
@@ -23,6 +24,11 @@ class PlanService implements PlanServiceInterface
     public function findAll(): Collection
     {
         return $this->planRepository->findAll();
+    }
+
+    public function findVisibleTo(User $user): Collection
+    {
+        return $this->planRepository->findVisibleTo($user);
     }
 
     public function findById(int $id): ?Plan

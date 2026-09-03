@@ -114,9 +114,19 @@ class SubscriptionController extends Controller
         return new SuccessResponse($presentation->present($processor->activate($request, $id)), ['message' => 'Subscription was activated successfully']);
     }
 
+    public function pending(ManageSubscriptionRequest $request, SubscriptionLifecycleProcessor $processor, SubscriptionPresentation $presentation, int $id): SuccessResponse
+    {
+        return new SuccessResponse($presentation->present($processor->pending($request, $id)), ['message' => 'Subscription is pending']);
+    }
+
     public function cancel(ManageSubscriptionRequest $request, SubscriptionLifecycleProcessor $processor, SubscriptionPresentation $presentation, int $id): SuccessResponse
     {
         return new SuccessResponse($presentation->present($processor->cancel($request, $id)), ['message' => 'Subscription was cancelled successfully']);
+    }
+
+    public function suspend(ManageSubscriptionRequest $request, SubscriptionLifecycleProcessor $processor, SubscriptionPresentation $presentation, int $id): SuccessResponse
+    {
+        return new SuccessResponse($presentation->present($processor->suspend($request, $id)), ['message' => 'Subscription was suspended successfully']);
     }
 
     public function renew(ManageSubscriptionRequest $request, SubscriptionLifecycleProcessor $processor, SubscriptionPresentation $presentation, int $id): SuccessResponse

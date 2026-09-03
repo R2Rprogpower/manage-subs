@@ -19,7 +19,7 @@ docker compose exec -T app php artisan key:generate
 docker compose exec -T app php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
 docker compose exec -T app php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
 
-docker compose exec -T app php artisan migrate
+docker compose exec -T app php artisan migrate --seed
 docker compose exec -T app php artisan optimize:clear
 
 make install-hooks
@@ -57,6 +57,7 @@ make check
 
 # Laravel commands
 docker compose exec -T app php artisan migrate
+docker compose exec -T app php artisan db:seed
 docker compose exec -T app php artisan migrate:fresh
 docker compose exec -T app php artisan route:list --path=api
 docker compose exec -T app php artisan test

@@ -50,11 +50,13 @@
                 <div class="mb-3"><label class="form-label">Channel</label><select class="form-select" name="telegram_channel_id" id="plan-channel" required></select></div>
                 <div class="mb-3"><label class="form-label">Code</label><input class="form-control" name="code" required maxlength="100"></div>
                 <div class="mb-3"><label class="form-label">Name</label><input class="form-control" name="name" required></div>
+                <div class="mb-3"><label class="form-label">Kind</label><select class="form-select" name="kind" id="plan-kind"><option value="money">Money</option><option value="achievement">Achievement</option></select></div>
                 <div class="row"><div class="col-7 mb-3"><label class="form-label">Price (minor units)</label><input class="form-control" type="number" min="0" name="price_minor" required></div><div class="col-5 mb-3"><label class="form-label">Currency</label><input class="form-control" name="currency" value="USD" maxlength="3" required></div></div>
+                <div class="mb-3 d-none" id="achievement-configuration"><label class="form-label">Achievement key</label><input class="form-control" name="achievement_key" maxlength="100"><div class="form-text">Stored for future achievement automation; checkout remains disabled in MVP.</div></div>
                 <div class="mb-3"><label class="form-label">Duration, days</label><input class="form-control" type="number" min="1" name="duration_days"><div class="form-text">Leave empty for unlimited.</div></div>
                 <input type="hidden" name="is_active" value="1"><button class="btn btn-primary w-100">Add type</button>
             </form></div></div></div>
-            <div class="col-8"><div class="card"><div class="card-body"><h5>Subscription types</h5><div class="table-responsive"><table class="table"><thead><tr><th>Channel</th><th>Name</th><th>Price</th><th>Duration</th><th>Status</th></tr></thead><tbody id="plans-body"></tbody></table></div></div></div></div>
+            <div class="col-8"><div class="card"><div class="card-body"><h5>Subscription types</h5><div class="table-responsive"><table class="table"><thead><tr><th>Channel</th><th>Name</th><th>Kind</th><th>Price</th><th>Duration</th><th>Status</th></tr></thead><tbody id="plans-body"></tbody></table></div></div></div></div>
         </div>
     </section>
 

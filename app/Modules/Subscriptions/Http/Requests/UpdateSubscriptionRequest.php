@@ -7,7 +7,6 @@ namespace App\Modules\Subscriptions\Http\Requests;
 use App\Core\Abstracts\Request;
 use App\Modules\Subscriptions\Enums\Permission as SubscriptionPermission;
 use App\Modules\Subscriptions\Enums\SubscriptionSource;
-use App\Modules\Subscriptions\Enums\SubscriptionStatus;
 use Illuminate\Validation\Rule;
 
 class UpdateSubscriptionRequest extends Request
@@ -25,7 +24,7 @@ class UpdateSubscriptionRequest extends Request
         return [
             'user_id' => ['sometimes', 'integer', 'exists:users,id'],
             'plan_id' => ['sometimes', 'integer', 'exists:plans,id'],
-            'status' => ['sometimes', 'string', Rule::in(SubscriptionStatus::values())],
+            'status' => ['prohibited'],
             'started_at' => ['sometimes', 'date'],
             'ends_at' => ['nullable', 'date'],
             'auto_renew' => ['sometimes', 'boolean'],

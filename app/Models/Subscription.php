@@ -18,6 +18,9 @@ use Illuminate\Support\Carbon;
  * @property int $plan_id
  * @property string $status
  * @property Carbon $started_at
+ * @property Carbon|null $activated_at
+ * @property Carbon|null $suspended_at
+ * @property Carbon|null $cancelled_at
  * @property Carbon|null $ends_at
  * @property bool $auto_renew
  * @property bool $trial_used
@@ -41,6 +44,9 @@ class Subscription extends Model
         'plan_id',
         'status',
         'started_at',
+        'activated_at',
+        'suspended_at',
+        'cancelled_at',
         'ends_at',
         'auto_renew',
         'trial_used',
@@ -54,6 +60,9 @@ class Subscription extends Model
     {
         return [
             'started_at' => 'datetime',
+            'activated_at' => 'datetime',
+            'suspended_at' => 'datetime',
+            'cancelled_at' => 'datetime',
             'ends_at' => 'datetime',
             'auto_renew' => 'boolean',
             'trial_used' => 'boolean',

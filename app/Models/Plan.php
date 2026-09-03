@@ -16,9 +16,11 @@ use Illuminate\Support\Carbon;
  * @property int|null $telegram_channel_id
  * @property string $code
  * @property string $name
+ * @property string $kind
  * @property int $price_minor
  * @property string $currency
  * @property int|null $duration_days
+ * @property array<string, mixed>|null $configuration
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -36,9 +38,11 @@ class Plan extends Model
         'telegram_channel_id',
         'code',
         'name',
+        'kind',
         'price_minor',
         'currency',
         'duration_days',
+        'configuration',
         'is_active',
     ];
 
@@ -48,6 +52,7 @@ class Plan extends Model
     protected function casts(): array
     {
         return [
+            'configuration' => 'array',
             'is_active' => 'boolean',
         ];
     }

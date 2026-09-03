@@ -116,6 +116,24 @@ class SubscriberFlowFeatureTest extends TestCase
         $this->assertDatabaseCount('payments', 0);
     }
 
+    public function test_achievement_type_cannot_use_money_placeholder_checkout(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        $plan = Plan::factory()->create([
+            'kind' => 'achievement',
+            'configuration' => ['achievement_key' => 'community_helper'],
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/subscriptions/checkout', [
+            'plan_id' => $plan->id,
+            'confirm_placeholder' => true,
+        ])->assertUnprocessable();
+
+        $this->assertDatabaseCount('subscriptions', 0);
+        $this->assertDatabaseCount('payments', 0);
+    }
+
     public function test_access_is_scoped_to_channel_and_subscription_state(): void
     {
         $subscriber = User::factory()->create();
@@ -133,5 +151,24 @@ class SubscriberFlowFeatureTest extends TestCase
         $this->assertTrue($service->hasActiveChannelAccess($subscriber->id, $allowedChannel->id));
         $this->assertFalse($service->hasActiveChannelAccess($subscriber->id, $otherChannel->id));
         $this->assertFalse($service->hasActiveChannelAccess($subscriber->id, $allowedChannel->id, now()->addDays(2)));
+    }
+
+    public function test_only_active_state_grants_access(): void
+    {
+        $subscriber = User::factory()->create();
+        $channel = TelegramChannel::factory()->create();
+        $plan = Plan::factory()->create(['telegram_channel_id' => $channel->id]);
+        $service = app(SubscriptionServiceInterface::class);
+
+        foreach (['draft', 'pending', 'suspended', 'cancelled', 'expired'] as $status) {
+            Subscription::factory()->create([
+                'user_id' => $subscriber->id,
+                'plan_id' => $plan->id,
+                'status' => $status,
+                'ends_at' => now()->addDay(),
+            ]);
+
+            $this->assertFalse($service->hasActiveChannelAccess($subscriber->id, $channel->id), "{$status} must not grant access");
+        }
     }
 }

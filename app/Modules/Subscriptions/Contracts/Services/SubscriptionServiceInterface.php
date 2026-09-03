@@ -36,7 +36,11 @@ interface SubscriptionServiceInterface
 
     public function expireLapsedSubscriptions(?DateTimeInterface $at = null): int;
 
+    public function markPendingSubscription(int $subscriptionId, ?int $actorId = null): Subscription;
+
     public function activateSubscription(int $subscriptionId, ?int $actorId = null): Subscription;
+
+    public function suspendSubscription(int $subscriptionId, ?int $actorId = null): Subscription;
 
     public function cancelSubscription(int $subscriptionId, ?int $actorId = null): Subscription;
 

@@ -34,6 +34,10 @@ class PlanUpdateProcessor extends Processor
             $data['name'] = $validated['name'];
         }
 
+        if (array_key_exists('kind', $validated)) {
+            $data['kind'] = $validated['kind'];
+        }
+
         if (array_key_exists('price_minor', $validated)) {
             $data['price_minor'] = (int) $validated['price_minor'];
         }
@@ -44,6 +48,10 @@ class PlanUpdateProcessor extends Processor
 
         if (array_key_exists('duration_days', $validated)) {
             $data['duration_days'] = $validated['duration_days'] !== null ? (int) $validated['duration_days'] : null;
+        }
+
+        if (array_key_exists('configuration', $validated)) {
+            $data['configuration'] = $validated['configuration'];
         }
 
         if (array_key_exists('is_active', $validated)) {

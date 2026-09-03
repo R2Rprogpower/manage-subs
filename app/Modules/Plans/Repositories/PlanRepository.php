@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Plans\Repositories;
 
 use App\Models\Plan;
+use App\Models\User;
 use App\Modules\Plans\Contracts\Repositories\PlanRepositoryInterface;
 use App\Modules\Plans\DTO\CreatePlanDTO;
 use App\Modules\Plans\DTO\UpdatePlanDTO;
+use App\Modules\Plans\Enums\Permission as PlanPermission;
 use Illuminate\Database\Eloquent\Collection;
 
 class PlanRepository implements PlanRepositoryInterface
@@ -24,6 +26,17 @@ class PlanRepository implements PlanRepositoryInterface
     public function findAll(): Collection
     {
         return Plan::query()->with('telegramChannel')->get();
+    }
+
+    public function findVisibleTo(User $user): Collection
+    {
+        return Plan::query()
+            ->with('telegramChannel')
+            ->when(
+                ! $user->can(PlanPermission::VIEW_PLANS->value),
+                fn ($query) => $query->whereHas('telegramChannel', fn ($channelQuery) => $channelQuery->where('owner_id', $user->id)),
+            )
+            ->get();
     }
 
     public function findByCode(string $code): ?Plan

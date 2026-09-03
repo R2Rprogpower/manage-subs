@@ -9,7 +9,10 @@ As an **authorized administrator**, I want to inspect and manage users, plans, a
 ## Business rules
 
 - Only an administrator with the required permission may perform a management action.
-- An administrator may activate, renew, cancel, or grant a free subscription.
+- An administrator may move a draft to pending, activate, suspend, renew, cancel,
+  or grant a free subscription.
+- Lifecycle states are draft, pending, active, suspended, cancelled, and expired;
+  only active grants access.
 - A subscription lifecycle change must trigger access reconciliation for its user.
 - Administrative actions must be auditable and identify the actor.
 - Invalid lifecycle transitions must be rejected without partially changing state.

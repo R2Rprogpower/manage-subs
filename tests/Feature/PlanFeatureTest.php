@@ -26,6 +26,7 @@ class PlanFeatureTest extends TestCase
             'telegram_channel_id' => $channel->id,
             'code' => 'partner_monthly',
             'name' => 'Partner Monthly',
+            'kind' => 'money',
             'price_minor' => 1499,
             'currency' => 'usd',
             'duration_days' => 30,
@@ -61,6 +62,42 @@ class PlanFeatureTest extends TestCase
             'telegram_channel_id' => $channel->id,
             'code' => 'locked',
             'name' => 'Locked',
+            'kind' => 'money',
+            'price_minor' => 100,
+            'currency' => 'USD',
+            'is_active' => true,
+        ])->assertForbidden();
+    }
+
+    public function test_owner_can_create_achievement_type_for_own_channel_only(): void
+    {
+        $owner = User::factory()->create();
+        $ownChannel = TelegramChannel::factory()->create(['owner_id' => $owner->id]);
+        $foreignChannel = TelegramChannel::factory()->create();
+        Sanctum::actingAs($owner);
+
+        $this->postJson('/api/plans', [
+            'telegram_channel_id' => $ownChannel->id,
+            'code' => 'community_helper',
+            'name' => 'Community Helper',
+            'kind' => 'achievement',
+            'configuration' => ['achievement_key' => 'community_helper'],
+            'duration_days' => 30,
+            'is_active' => true,
+        ])->assertCreated()
+            ->assertJsonPath('data.kind', 'achievement')
+            ->assertJsonPath('data.configuration.achievement_key', 'community_helper');
+
+        $this->getJson('/api/plans')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.telegram_channel_id', $ownChannel->id);
+
+        $this->postJson('/api/plans', [
+            'telegram_channel_id' => $foreignChannel->id,
+            'code' => 'foreign_type',
+            'name' => 'Foreign Type',
+            'kind' => 'money',
             'price_minor' => 100,
             'currency' => 'USD',
             'is_active' => true,

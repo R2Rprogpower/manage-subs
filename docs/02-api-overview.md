@@ -3,7 +3,10 @@
 All API routes are loaded from module route files via `routes/api.php`:
 
 - `app/Modules/Auth/api.php`
+- `app/Modules/Channels/api.php`
 - `app/Modules/Permissions/api.php`
+- `app/Modules/Plans/api.php`
+- `app/Modules/Subscriptions/api.php`
 - `app/Modules/Users/api.php`
 
 ## Auth + MFA
@@ -20,6 +23,13 @@ All API routes are loaded from module route files via `routes/api.php`:
 - Users: `/api/users...`
 - Roles: `/api/roles...`
 - Permissions: `/api/permissions...`
+- Owner channels: `/api/channels...`
+- Available channel catalog: `GET /api/channels/available`
+- Channel subscription types: `/api/plans...`
+- Subscriber checkout placeholder: `POST /api/subscriptions/checkout`
+- Subscriber-owned list: `GET /api/subscriptions/mine`
+- Administrative subscription lifecycle: `/api/subscriptions/{id}/activate`,
+  `/cancel`, and `/renew`
 
 ## Postman
 

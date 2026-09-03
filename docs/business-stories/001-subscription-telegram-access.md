@@ -1,6 +1,6 @@
 # BS-001: Subscription-based Telegram access
 
-**Status:** In progress
+**Status:** Implemented (MVP application state; Telegram automation deferred)
 
 ## Story
 

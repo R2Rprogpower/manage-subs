@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\TelegramChannel;
 use App\Models\User;
 use App\Modules\Plans\Enums\Permission as PlanPermission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,8 +20,10 @@ class PlanFeatureTest extends TestCase
     {
         $manager = $this->createManagerUser(PlanPermission::values());
         Sanctum::actingAs($manager);
+        $channel = TelegramChannel::factory()->create();
 
         $storeResponse = $this->postJson('/api/plans', [
+            'telegram_channel_id' => $channel->id,
             'code' => 'partner_monthly',
             'name' => 'Partner Monthly',
             'price_minor' => 1499,
@@ -52,8 +55,10 @@ class PlanFeatureTest extends TestCase
     public function test_user_without_permission_cannot_create_plan(): void
     {
         Sanctum::actingAs(User::factory()->create());
+        $channel = TelegramChannel::factory()->create();
 
         $this->postJson('/api/plans', [
+            'telegram_channel_id' => $channel->id,
             'code' => 'locked',
             'name' => 'Locked',
             'price_minor' => 100,

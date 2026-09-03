@@ -22,6 +22,10 @@ class PlanUpdateProcessor extends Processor
 
         $data = [];
 
+        if (array_key_exists('telegram_channel_id', $validated)) {
+            $data['telegram_channel_id'] = (int) $validated['telegram_channel_id'];
+        }
+
         if (array_key_exists('code', $validated)) {
             $data['code'] = $validated['code'];
         }

@@ -2,8 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Permissions\Enums\Role as RoleEnum;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -33,5 +36,10 @@ class DatabaseSeeder extends Seeder
         if ($moduleSeeders !== []) {
             $this->call($moduleSeeders);
         }
+
+        $allPermissions = Permission::query()->pluck('name')->all();
+        Role::query()->whereIn('name', [RoleEnum::SUPER_ADMIN->value, RoleEnum::ADMIN->value])
+            ->get()
+            ->each(fn (Role $role) => $role->syncPermissions($allPermissions));
     }
 }

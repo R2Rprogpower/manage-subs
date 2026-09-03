@@ -7,6 +7,7 @@ namespace App\Modules\Plans\DTO;
 readonly class CreatePlanDTO
 {
     public function __construct(
+        public int $telegramChannelId,
         public string $code,
         public string $name,
         public int $priceMinor,
@@ -21,6 +22,7 @@ readonly class CreatePlanDTO
     public function toArray(): array
     {
         return [
+            'telegram_channel_id' => $this->telegramChannelId,
             'code' => $this->code,
             'name' => $this->name,
             'price_minor' => $this->priceMinor,

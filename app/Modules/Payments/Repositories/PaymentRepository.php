@@ -16,7 +16,7 @@ class PaymentRepository implements PaymentRepositoryInterface
     {
         /** @var Payment|null */
         return Payment::query()
-            ->with(['subscription.user', 'subscription.plan'])
+            ->with(['subscription.user', 'subscription.plan.telegramChannel'])
             ->find($id);
     }
 
@@ -24,7 +24,7 @@ class PaymentRepository implements PaymentRepositoryInterface
     {
         /** @var Payment|null */
         return Payment::query()
-            ->with(['subscription.user', 'subscription.plan'])
+            ->with(['subscription.user', 'subscription.plan.telegramChannel'])
             ->where('provider', $provider)
             ->where('provider_payment_id', $providerPaymentId)
             ->first();
@@ -36,7 +36,7 @@ class PaymentRepository implements PaymentRepositoryInterface
     public function findAll(): Collection
     {
         return Payment::query()
-            ->with(['subscription.user', 'subscription.plan'])
+            ->with(['subscription.user', 'subscription.plan.telegramChannel'])
             ->get();
     }
 
@@ -44,7 +44,7 @@ class PaymentRepository implements PaymentRepositoryInterface
     {
         /** @var Payment $payment */
         $payment = Payment::query()->create($dto->toArray());
-        $payment->load(['subscription.user', 'subscription.plan']);
+        $payment->load(['subscription.user', 'subscription.plan.telegramChannel']);
 
         return $payment;
     }

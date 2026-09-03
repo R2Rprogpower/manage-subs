@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Plans\Database\Seeders;
 
 use App\Models\Plan;
+use App\Models\TelegramChannel;
 use App\Modules\Plans\Enums\Permission as PlanPermission;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
@@ -20,7 +21,12 @@ class PlansSeeder extends Seeder
             ]);
         }
 
-        foreach ($this->defaultPlans() as $plan) {
+        $channel = TelegramChannel::query()->where('telegram_chat_id', '-1001234567890')->first();
+        if ($channel === null) {
+            return;
+        }
+
+        foreach ($this->defaultPlans($channel->id) as $plan) {
             Plan::query()->updateOrCreate(
                 ['code' => $plan['code']],
                 $plan
@@ -31,10 +37,11 @@ class PlansSeeder extends Seeder
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function defaultPlans(): array
+    private function defaultPlans(int $channelId): array
     {
         return [
             [
+                'telegram_channel_id' => $channelId,
                 'code' => 'free',
                 'name' => 'Free',
                 'price_minor' => 0,
@@ -43,6 +50,7 @@ class PlansSeeder extends Seeder
                 'is_active' => true,
             ],
             [
+                'telegram_channel_id' => $channelId,
                 'code' => 'trial_7_days',
                 'name' => 'Trial 7 Days',
                 'price_minor' => 0,
@@ -51,6 +59,7 @@ class PlansSeeder extends Seeder
                 'is_active' => true,
             ],
             [
+                'telegram_channel_id' => $channelId,
                 'code' => 'monthly',
                 'name' => 'Monthly',
                 'price_minor' => 999,
@@ -59,6 +68,7 @@ class PlansSeeder extends Seeder
                 'is_active' => true,
             ],
             [
+                'telegram_channel_id' => $channelId,
                 'code' => 'yearly',
                 'name' => 'Yearly',
                 'price_minor' => 9999,

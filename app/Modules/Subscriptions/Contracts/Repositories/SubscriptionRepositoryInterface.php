@@ -27,6 +27,8 @@ interface SubscriptionRepositoryInterface
 
     public function findActiveByUserId(int $userId, ?DateTimeInterface $at = null): ?Subscription;
 
+    public function findActiveByUserAndChannel(int $userId, int $channelId, ?DateTimeInterface $at = null): ?Subscription;
+
     /**
      * @return Collection<int, Subscription>
      */

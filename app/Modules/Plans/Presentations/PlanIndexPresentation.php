@@ -23,6 +23,7 @@ class PlanIndexPresentation extends Presentation implements PresentationInterfac
         /** @var Collection<int, Plan> $data */
         return $data->values()->map(fn (Plan $plan): array => [
             'id' => $plan->id,
+            'telegram_channel_id' => $plan->telegram_channel_id,
             'code' => $plan->code,
             'name' => $plan->name,
             'price_minor' => $plan->price_minor,
@@ -31,6 +32,11 @@ class PlanIndexPresentation extends Presentation implements PresentationInterfac
             'is_active' => $plan->is_active,
             'created_at' => $plan->created_at?->toIso8601String(),
             'updated_at' => $plan->updated_at?->toIso8601String(),
+            'channel' => $plan->relationLoaded('telegramChannel') && $plan->telegramChannel !== null ? [
+                'id' => $plan->telegramChannel->id,
+                'title' => $plan->telegramChannel->title,
+                'username' => $plan->telegramChannel->username,
+            ] : null,
         ])->toArray();
     }
 }

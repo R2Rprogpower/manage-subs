@@ -17,7 +17,7 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
     {
         /** @var Subscription|null */
         return Subscription::query()
-            ->with(['user', 'plan', 'payments'])
+            ->with(['user', 'plan.telegramChannel', 'payments'])
             ->find($id);
     }
 
@@ -27,7 +27,7 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
     public function findAll(): Collection
     {
         return Subscription::query()
-            ->with(['user', 'plan', 'payments'])
+            ->with(['user', 'plan.telegramChannel', 'payments'])
             ->get();
     }
 
@@ -35,7 +35,7 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
     {
         /** @var Subscription $subscription */
         $subscription = Subscription::query()->create($dto->toArray());
-        $subscription->load(['user', 'plan', 'payments']);
+        $subscription->load(['user', 'plan.telegramChannel', 'payments']);
 
         return $subscription;
     }
@@ -66,6 +66,22 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
             ->first();
     }
 
+    public function findActiveByUserAndChannel(int $userId, int $channelId, ?DateTimeInterface $at = null): ?Subscription
+    {
+        $moment = $at?->format('Y-m-d H:i:s') ?? now()->toDateTimeString();
+
+        /** @var Subscription|null */
+        return Subscription::query()
+            ->where('user_id', $userId)
+            ->where('status', 'active')
+            ->whereHas('plan', fn ($query) => $query->where('telegram_channel_id', $channelId))
+            ->where(function ($query) use ($moment): void {
+                $query->whereNull('ends_at')->orWhere('ends_at', '>', $moment);
+            })
+            ->latest('started_at')
+            ->first();
+    }
+
     /**
      * @return Collection<int, Subscription>
      */
@@ -86,7 +102,7 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
     public function findByUserId(int $userId): Collection
     {
         return Subscription::query()
-            ->with(['user', 'plan', 'payments'])
+            ->with(['user', 'plan.telegramChannel', 'payments'])
             ->where('user_id', $userId)
             ->orderByDesc('started_at')
             ->get();

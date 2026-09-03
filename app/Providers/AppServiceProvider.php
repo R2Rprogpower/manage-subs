@@ -7,6 +7,7 @@ use App\Infrastructure\Services\LiqPayGateway;
 use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\TelegramChannel;
 use App\Models\User;
 use App\Models\UserIdentity;
 use App\Modules\Auth\Contracts\Repositories\AuthUserRepositoryInterface;
@@ -17,6 +18,11 @@ use App\Modules\Auth\Repositories\AuthUserRepository;
 use App\Modules\Auth\Services\AuthService;
 use App\Modules\Auth\Services\MfaService;
 use App\Modules\Auth\Services\TokenService;
+use App\Modules\Channels\Contracts\Repositories\ChannelRepositoryInterface;
+use App\Modules\Channels\Contracts\Services\ChannelServiceInterface;
+use App\Modules\Channels\Policies\ChannelPolicy;
+use App\Modules\Channels\Repositories\ChannelRepository;
+use App\Modules\Channels\Services\ChannelService;
 use App\Modules\Payments\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Modules\Payments\Contracts\Services\PaymentServiceInterface;
 use App\Modules\Payments\Policies\PaymentPolicy;
@@ -72,6 +78,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(MfaServiceInterface::class, MfaService::class);
         $this->app->bind(TokenServiceInterface::class, TokenService::class);
 
+        $this->app->bind(ChannelRepositoryInterface::class, ChannelRepository::class);
+        $this->app->bind(ChannelServiceInterface::class, ChannelService::class);
+
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(UserServiceInterface::class, UserService::class);
 
@@ -107,6 +116,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('mfa', fn (Request $request): Limit => Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip()));
 
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(TelegramChannel::class, ChannelPolicy::class);
         Gate::policy(Plan::class, PlanPolicy::class);
         Gate::policy(UserIdentity::class, UserIdentityPolicy::class);
         Gate::policy(Subscription::class, SubscriptionPolicy::class);

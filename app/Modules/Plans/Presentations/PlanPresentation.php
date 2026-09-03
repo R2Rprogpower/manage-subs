@@ -21,6 +21,7 @@ class PlanPresentation extends Presentation implements PresentationInterface
 
         return [
             'id' => $data->id,
+            'telegram_channel_id' => $data->telegram_channel_id,
             'code' => $data->code,
             'name' => $data->name,
             'price_minor' => $data->price_minor,
@@ -29,6 +30,11 @@ class PlanPresentation extends Presentation implements PresentationInterface
             'is_active' => $data->is_active,
             'created_at' => $data->created_at?->toIso8601String(),
             'updated_at' => $data->updated_at?->toIso8601String(),
+            'channel' => $data->relationLoaded('telegramChannel') && $data->telegramChannel !== null ? [
+                'id' => $data->telegramChannel->id,
+                'title' => $data->telegramChannel->title,
+                'username' => $data->telegramChannel->username,
+            ] : null,
         ];
     }
 }

@@ -47,7 +47,7 @@ class PaymentService implements PaymentServiceInterface
 
         $this->paymentRepository->update($payment, $dto);
         $payment->refresh();
-        $payment->load(['subscription.user', 'subscription.plan']);
+        $payment->load(['subscription.user', 'subscription.plan.telegramChannel']);
 
         return $payment;
     }
@@ -76,7 +76,7 @@ class PaymentService implements PaymentServiceInterface
         ]));
 
         $payment->refresh();
-        $payment->load(['subscription.user', 'subscription.plan']);
+        $payment->load(['subscription.user', 'subscription.plan.telegramChannel']);
 
         return $payment;
     }
@@ -94,7 +94,7 @@ class PaymentService implements PaymentServiceInterface
         ]));
 
         $payment->refresh();
-        $payment->load(['subscription.user', 'subscription.plan']);
+        $payment->load(['subscription.user', 'subscription.plan.telegramChannel']);
 
         return $payment;
     }
@@ -110,15 +110,20 @@ class PaymentService implements PaymentServiceInterface
             return;
         }
 
+        $channelId = $payment->subscription->plan?->telegram_channel_id;
+        if ($channelId === null) {
+            return;
+        }
+
         if ($payment->status === 'paid') {
             $this->subscriptionService->activateSubscription($payment->subscription_id, $actorId);
-            $this->subscriptionService->syncChannelAccessForUser($payment->subscription->user_id);
+            $this->subscriptionService->syncChannelAccessForUser($payment->subscription->user_id, $channelId);
 
             return;
         }
 
         if ($payment->status === 'failed' || $payment->status === 'refunded') {
-            $this->subscriptionService->syncChannelAccessForUser($payment->subscription->user_id);
+            $this->subscriptionService->syncChannelAccessForUser($payment->subscription->user_id, $channelId);
         }
     }
 }

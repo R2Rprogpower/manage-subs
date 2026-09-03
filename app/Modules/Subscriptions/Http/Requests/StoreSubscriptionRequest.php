@@ -6,6 +6,8 @@ namespace App\Modules\Subscriptions\Http\Requests;
 
 use App\Core\Abstracts\Request;
 use App\Modules\Subscriptions\Enums\Permission as SubscriptionPermission;
+use App\Modules\Subscriptions\Enums\SubscriptionSource;
+use App\Modules\Subscriptions\Enums\SubscriptionStatus;
 use Illuminate\Validation\Rule;
 
 class StoreSubscriptionRequest extends Request
@@ -23,12 +25,12 @@ class StoreSubscriptionRequest extends Request
         return [
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
-            'status' => ['required', 'string', Rule::in(['active', 'expired', 'cancelled'])],
+            'status' => ['required', 'string', Rule::in(SubscriptionStatus::values())],
             'started_at' => ['required', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:started_at'],
             'auto_renew' => ['required', 'boolean'],
             'trial_used' => ['required', 'boolean'],
-            'source' => ['required', 'string', Rule::in(['bot', 'admin', 'manual'])],
+            'source' => ['required', 'string', Rule::in(SubscriptionSource::values())],
         ];
     }
 }

@@ -21,6 +21,7 @@ class PlanStoreProcessor extends Processor
         $validated = $request->validated();
 
         return $this->planService->create(new CreatePlanDTO(
+            telegramChannelId: (int) $validated['telegram_channel_id'],
             code: $validated['code'],
             name: $validated['name'],
             priceMinor: (int) $validated['price_minor'],

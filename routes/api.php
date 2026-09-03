@@ -13,6 +13,7 @@ Route::get('/health', static function (): JsonResponse {
 });
 
 require base_path('app/Modules/Auth/api.php');
+require base_path('app/Modules/Channels/api.php');
 require base_path('app/Modules/Permissions/api.php');
 require base_path('app/Modules/Users/api.php');
 require base_path('app/Modules/UserIdentities/api.php');

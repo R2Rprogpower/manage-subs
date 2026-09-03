@@ -1,6 +1,6 @@
 # BS-002: Admin manages subscriptions
 
-**Status:** In progress
+**Status:** Implemented
 
 ## Story
 

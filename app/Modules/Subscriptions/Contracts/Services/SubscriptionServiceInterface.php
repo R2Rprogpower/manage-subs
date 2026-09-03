@@ -19,13 +19,20 @@ interface SubscriptionServiceInterface
 
     public function findById(int $id): ?Subscription;
 
+    /** @return Collection<int, Subscription> */
+    public function findByUserId(int $userId): Collection;
+
     public function create(CreateSubscriptionDTO $dto): Subscription;
+
+    public function subscribeWithPlaceholder(int $userId, int $planId): Subscription;
 
     public function update(int $id, UpdateSubscriptionDTO $dto): Subscription;
 
     public function delete(int $id): void;
 
     public function hasActiveAccess(int $userId, ?DateTimeInterface $at = null): bool;
+
+    public function hasActiveChannelAccess(int $userId, int $channelId, ?DateTimeInterface $at = null): bool;
 
     public function expireLapsedSubscriptions(?DateTimeInterface $at = null): int;
 
@@ -37,5 +44,5 @@ interface SubscriptionServiceInterface
 
     public function grantFreeAccess(int $userId, int $planId, ?int $actorId = null): Subscription;
 
-    public function syncChannelAccessForUser(int $userId, ?DateTimeInterface $at = null): bool;
+    public function syncChannelAccessForUser(int $userId, int $channelId, ?DateTimeInterface $at = null): bool;
 }

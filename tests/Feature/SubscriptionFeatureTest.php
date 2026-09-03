@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Modules\Subscriptions\Enums\Permission as SubscriptionPermission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -71,6 +72,36 @@ class SubscriptionFeatureTest extends TestCase
             'trial_used' => false,
             'source' => 'manual',
         ])->assertForbidden();
+    }
+
+    public function test_manager_can_cancel_subscription_and_action_is_audited(): void
+    {
+        $manager = $this->createManagerUser(SubscriptionPermission::values());
+        Sanctum::actingAs($manager);
+        $subscription = Subscription::factory()->create([
+            'status' => 'active',
+            'ends_at' => now()->addMonth(),
+        ]);
+
+        $this->postJson("/api/subscriptions/{$subscription->id}/cancel")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled')
+            ->assertJsonPath('data.has_access', false);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'actor_id' => $manager->id,
+            'action_type' => 'subscription_cancelled',
+            'target_type' => 'subscription',
+            'target_id' => $subscription->id,
+        ]);
+    }
+
+    public function test_user_without_permission_cannot_list_all_subscriptions(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        Subscription::factory()->create();
+
+        $this->getJson('/api/subscriptions')->assertForbidden();
     }
 
     /**

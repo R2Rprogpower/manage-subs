@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Users\Http\Requests\DeleteUserRequest;
 use App\Modules\Users\Http\Requests\StoreUserRequest;
 use App\Modules\Users\Http\Requests\UpdateUserRequest;
+use App\Modules\Users\Http\Requests\ViewUserRequest;
 use App\Modules\Users\Presentations\UserDestroyPresentation;
 use App\Modules\Users\Presentations\UserIndexPresentation;
 use App\Modules\Users\Presentations\UserShowPresentation;
@@ -24,6 +25,7 @@ use Illuminate\Http\Response;
 class UserController extends Controller
 {
     public function index(
+        ViewUserRequest $request,
         UserIndexProcessor $processor,
         UserIndexPresentation $presentation
     ): SuccessResponse {
@@ -35,6 +37,7 @@ class UserController extends Controller
     }
 
     public function show(
+        ViewUserRequest $request,
         UserShowProcessor $processor,
         UserShowPresentation $presentation,
         int $id

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\Plan;
+use App\Models\TelegramChannel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -23,6 +24,7 @@ class PlanFactory extends Factory
         $name = fake()->unique()->words(2, true);
 
         return [
+            'telegram_channel_id' => TelegramChannel::factory(),
             'code' => Str::of($name)->lower()->replace(' ', '_')->value(),
             'name' => Str::of($name)->title()->value(),
             'price_minor' => fake()->numberBetween(0, 4999),

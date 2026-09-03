@@ -1,6 +1,6 @@
 # BS-003: Payment placeholder
 
-**Status:** Planned
+**Status:** Implemented
 
 ## Story
 

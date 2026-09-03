@@ -83,4 +83,11 @@ class Subscription extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    public function grantsAccess(?Carbon $at = null): bool
+    {
+        $moment = $at ?? now();
+
+        return $this->status === 'active' && ($this->ends_at === null || $this->ends_at->isAfter($moment));
+    }
 }

@@ -29,6 +29,7 @@ class SubscriptionPresentation extends Presentation implements PresentationInter
             'auto_renew' => $data->auto_renew,
             'trial_used' => $data->trial_used,
             'source' => $data->source,
+            'has_access' => $data->grantsAccess(),
             'created_at' => $data->created_at?->toIso8601String(),
             'updated_at' => $data->updated_at?->toIso8601String(),
             'user' => $data->relationLoaded('user') && $data->user !== null ? [
@@ -39,6 +40,14 @@ class SubscriptionPresentation extends Presentation implements PresentationInter
                 'id' => $data->plan->id,
                 'code' => $data->plan->code,
                 'name' => $data->plan->name,
+                'price_minor' => $data->plan->price_minor,
+                'currency' => $data->plan->currency,
+                'duration_days' => $data->plan->duration_days,
+            ] : null,
+            'channel' => $data->relationLoaded('plan') && $data->plan?->relationLoaded('telegramChannel') && $data->plan->telegramChannel !== null ? [
+                'id' => $data->plan->telegramChannel->id,
+                'title' => $data->plan->telegramChannel->title,
+                'username' => $data->plan->telegramChannel->username,
             ] : null,
             'payments_count' => $data->relationLoaded('payments') ? $data->payments->count() : null,
         ];

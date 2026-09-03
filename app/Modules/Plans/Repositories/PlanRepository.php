@@ -15,7 +15,7 @@ class PlanRepository implements PlanRepositoryInterface
     public function findById(int $id): ?Plan
     {
         /** @var Plan|null */
-        return Plan::query()->find($id);
+        return Plan::query()->with('telegramChannel')->find($id);
     }
 
     /**
@@ -23,7 +23,7 @@ class PlanRepository implements PlanRepositoryInterface
      */
     public function findAll(): Collection
     {
-        return Plan::query()->get();
+        return Plan::query()->with('telegramChannel')->get();
     }
 
     public function findByCode(string $code): ?Plan
@@ -37,7 +37,7 @@ class PlanRepository implements PlanRepositoryInterface
         /** @var Plan $plan */
         $plan = Plan::query()->create($dto->toArray());
 
-        return $plan;
+        return $plan->load('telegramChannel');
     }
 
     public function update(Plan $plan, UpdatePlanDTO $dto): bool

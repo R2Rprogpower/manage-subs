@@ -5,11 +5,35 @@ declare(strict_types=1);
 namespace App\Infrastructure\Services;
 
 use App\Models\AuditLog;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Http\Request;
 
 class AuditLogService
 {
+    /**
+     * @param  array<string, mixed>|null  $previousValue
+     * @param  array<string, mixed>|null  $newValue
+     */
+    public function logSubscriptionAction(
+        User $actor,
+        Subscription $subscription,
+        string $action,
+        ?array $previousValue = null,
+        ?array $newValue = null,
+        ?Request $request = null,
+    ): AuditLog {
+        return $this->createLog(
+            actor: $actor,
+            actionType: $action,
+            targetType: 'subscription',
+            targetId: $subscription->id,
+            previousValue: $previousValue,
+            newValue: $newValue,
+            request: $request,
+        );
+    }
+
     /**
      * Log a role assignment action
      */

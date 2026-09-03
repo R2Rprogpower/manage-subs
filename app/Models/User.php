@@ -89,4 +89,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Subscription::class);
     }
+
+    /**
+     * @return HasMany<TelegramChannel, $this>
+     */
+    public function telegramChannels(): HasMany
+    {
+        return $this->hasMany(TelegramChannel::class, 'owner_id');
+    }
 }

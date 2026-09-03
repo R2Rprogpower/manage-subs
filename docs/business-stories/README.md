@@ -19,12 +19,13 @@ Use [the story template](_template.md) when adding a story. Story filenames use 
 
 | ID | Story | Status |
 | --- | --- | --- |
-| BS-001 | [Subscription-based Telegram access](001-subscription-telegram-access.md) | In progress |
-| BS-002 | [Admin manages subscriptions](002-admin-manages-subscriptions.md) | In progress |
-| BS-003 | [Payment placeholder](003-payment-placeholder.md) | Planned |
+| BS-001 | [Subscription-based Telegram access](001-subscription-telegram-access.md) | Implemented (MVP) |
+| BS-002 | [Admin manages subscriptions](002-admin-manages-subscriptions.md) | Implemented |
+| BS-003 | [Payment placeholder](003-payment-placeholder.md) | Implemented |
+| BS-004 | [Channel registration and self-service subscriptions](004-channel-registration-and-self-service.md) | Implemented |
 
 ## Current product boundary
 
-The product manages users, plans, and subscriptions. Subscription state is the source of truth for Telegram channel access. The real Telegram adapter, automatic expiration workflow, and complete admin UI are not implemented yet.
+The product manages Telegram channels, channel-specific subscription types, users, subscriptions, and placeholder payment records. Subscription state is the source of truth for Telegram channel access. The real Telegram adapter and scheduled expiration workflow are not implemented yet.
 
-Real payment-provider behaviour is intentionally deferred. Until the product features are ready, payment-facing flows must use a clearly identified placeholder and must not imply that money was charged.
+Real payment-provider behaviour is intentionally deferred. The subscriber checkout uses a clearly identified placeholder, rejects payment credentials, and never implies that money was charged.

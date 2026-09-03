@@ -109,8 +109,29 @@ bash scripts/deploy.sh --env /opt/app/.env
 - **Manual**: run deploy command on VPS.
 - **Automatic (CI)**: `.github/workflows/ci.yml` runs checks, then deploys on push to `main`. All values come from GitHub repo variables/secrets — no need to edit the workflow file.
 - **Parallel deploy protection**: `scripts/deploy.sh` uses a lock file (`/opt/<app>/.deploy.lock`).
+- **Existing database password upgrades**: before the application health check,
+  the deploy script connects to PostgreSQL over its container-local Unix socket
+  and synchronizes the `app` role password with `DB_PASSWORD`. This allows a
+  previously initialized volume to be reused after rotating away from the old
+  development password without printing the password in deploy logs.
 
 For multi-app template usage, see `docs/08-template-repo-workflow.md`.
+
+## Pre-push checklist
+
+Run from the repository root before pushing to `main`:
+
+```bash
+git diff --check
+bash -n scripts/*.sh
+docker compose config --quiet
+bash scripts/pre-commit
+git status --short
+```
+
+After pushing, the Actions deploy log must reach
+`PostgreSQL role credentials are synchronized`, then report a healthy stack and
+complete the Caddy switch. Finally, verify `https://<app-domain>/api/health`.
 
 ## Required GitHub repository variables
 

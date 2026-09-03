@@ -236,7 +236,7 @@ NEW_DIR="$BASE_DIR/$NEW"
 
 # ─── Pull latest code ──────────────────────────────────────────────────────────
 echo ""
-echo "[1/11] Pulling code into $NEW_DIR ..."
+echo "[1/13] Pulling code into $NEW_DIR ..."
 if [[ -d "$NEW_DIR/.git" ]]; then
   git -C "$NEW_DIR" fetch origin
   git -C "$NEW_DIR" reset --hard "origin/$BRANCH"
@@ -251,7 +251,7 @@ cp "$ENV_SOURCE" "$NEW_DIR/.env"
 # production nginx service serves this mounted directory, so image-only assets
 # would otherwise be hidden by the bind mount.
 echo ""
-echo "[2/11] Building frontend assets ..."
+echo "[2/13] Building frontend assets ..."
 docker run --rm \
   --user "$APP_UID:$APP_GID" \
   --env HOME=/tmp \
@@ -262,7 +262,7 @@ docker run --rm \
 
 # ─── Build & start new stack ───────────────────────────────────────────────────
 echo ""
-echo "[3/11] Building and starting $NEW stack ..."
+echo "[3/13] Building and starting $NEW stack ..."
 cd "$NEW_DIR"
 if [[ ! -f "$BASE_COMPOSE_FILE" ]]; then
   echo "ERROR: $BASE_COMPOSE_FILE not found in $NEW_DIR." >&2
@@ -276,12 +276,37 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW
 
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
-echo "[4/11] Installing PHP dependencies (with dev for test gate) ..."
+echo "[4/13] Installing PHP dependencies (with dev for test gate) ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --prefer-dist --optimize-autoloader
+
+# PostgreSQL only applies POSTGRES_PASSWORD while initializing an empty data
+# directory. Existing blue/green volumes may therefore still have the legacy
+# password even though the container and Laravel now receive the production
+# password. Connect over the container-local Unix socket and reconcile the role
+# before Laravel's database-backed health check runs. \getenv plus psql's quoted
+# variable form keeps the password out of command arguments and deploy output.
+echo ""
+echo "[5/13] Waiting for PostgreSQL and synchronizing application credentials ..."
+DB_WAIT_ELAPSED=0
+until APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T db pg_isready -U app -d postgres >/dev/null 2>&1; do
+  if [[ $DB_WAIT_ELAPSED -ge $HEALTH_TIMEOUT ]]; then
+    echo "ERROR: PostgreSQL did not become ready after ${HEALTH_TIMEOUT}s." >&2
+    APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" logs --tail=50 db
+    exit 1
+  fi
+  sleep 2
+  DB_WAIT_ELAPSED=$((DB_WAIT_ELAPSED + 2))
+done
+
+cat <<'SQL' | APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T db psql -X -U app -d postgres -v ON_ERROR_STOP=1
+\getenv deploy_db_password POSTGRES_PASSWORD
+ALTER ROLE app WITH PASSWORD :'deploy_db_password';
+SQL
+echo "  ✓ PostgreSQL role credentials are synchronized"
 
 # ─── Wait for health ───────────────────────────────────────────────────────────
 echo ""
-echo "[5/11] Waiting for $NEW stack on port $NEW_PORT ..."
+echo "[6/13] Waiting for $NEW stack on port $NEW_PORT ..."
 ELAPSED=0
 until curl -sf "http://127.0.0.1:$NEW_PORT/api/health" > /dev/null 2>&1; do
   if [[ $ELAPSED -ge $HEALTH_TIMEOUT ]]; then
@@ -296,16 +321,16 @@ echo "  ✓ $NEW stack is healthy"
 
 # ─── Run migrations ────────────────────────────────────────────────────────────
 echo ""
-echo "[6/11] Running migrations ..."
+echo "[7/13] Running migrations ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan migrate --force
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app php artisan optimize
 
 # ─── Run tests on isolated DB ─────────────────────────────────────────────────
 echo ""
-echo "[7/11] Creating isolated test database ($TEST_DB_NAME) ..."
+echo "[8/13] Creating isolated test database ($TEST_DB_NAME) ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";' -c 'CREATE DATABASE \"$TEST_DB_NAME\";'"
 
-echo "[8/11] Running test suite against isolated database ..."
+echo "[9/13] Running test suite against isolated database ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app env \
   APP_ENV=testing \
   DB_CONNECTION=pgsql \
@@ -326,15 +351,15 @@ APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW
   DB_PASSWORD="$DB_PASSWORD_VALUE" \
   php artisan test --testsuite=Feature
 
-echo "[9/11] Cleaning isolated test database ..."
+echo "[10/13] Cleaning isolated test database ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T db sh -lc "psql -U \"$DB_USERNAME_VALUE\" -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS \"$TEST_DB_NAME\";'"
 
-echo "[9/11] Pruning dev dependencies for production runtime ..."
+echo "[11/13] Pruning dev dependencies for production runtime ..."
 APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$NEW" "${COMPOSE_BIN[@]}" exec -T app composer install --no-dev --prefer-dist --optimize-autoloader
 
 # ─── Switch Caddy upstream ─────────────────────────────────────────────────────
 echo ""
-echo "[10/11] Switching Caddy to port $NEW_PORT ..."
+echo "[12/13] Switching Caddy to port $NEW_PORT ..."
 
 # Ensure per-app conf.d directory exists
 run_as_root mkdir -p "$CADDY_CONF_DIR"
@@ -399,7 +424,7 @@ echo "  ✓ Traffic now routed to $NEW (port $NEW_PORT)"
 
 # ─── Tear down old stack ───────────────────────────────────────────────────────
 echo ""
-echo "[11/11] Stopping old $ACTIVE stack ..."
+echo "[13/13] Stopping old $ACTIVE stack ..."
 OLD_DIR="$BASE_DIR/$ACTIVE"
 if [[ -d "$OLD_DIR" ]]; then
   APP_UID="$APP_UID" APP_GID="$APP_GID" COMPOSE_PROJECT_NAME="app_${APP_SLUG}_$ACTIVE" "${COMPOSE_BIN[@]}" \

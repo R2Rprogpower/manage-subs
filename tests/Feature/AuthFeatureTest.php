@@ -53,6 +53,25 @@ class AuthFeatureTest extends TestCase
         $this->assertNotEmpty((string) $response->json('data.access_token'));
     }
 
+    public function test_web_login_authenticates_the_session(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Web Login User',
+            'email' => 'web-login@example.com',
+            'password' => 'password123',
+        ]);
+
+        $this->get('/login')->assertOk();
+
+        $this->postJson('/login', [
+            '_token' => session()->token(),
+            'email' => 'web-login@example.com',
+            'password' => 'password123',
+        ])->assertOk();
+
+        $this->assertAuthenticatedAs($user);
+    }
+
     public function test_logout_requires_authentication(): void
     {
         $this->postJson('/api/auth/logout')

@@ -80,7 +80,7 @@
 
         try {
             var csrfToken = document.querySelector('meta[name="csrf-token"]');
-            var response = await fetch('/api/auth/login', {
+            var response = await fetch('/login', {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',

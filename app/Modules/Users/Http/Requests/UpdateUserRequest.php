@@ -7,6 +7,7 @@ namespace App\Modules\Users\Http\Requests;
 use App\Core\Abstracts\Request;
 use App\Modules\Users\Enums\Permission as UserPermission;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UpdateUserRequest extends Request
 {
@@ -26,7 +27,7 @@ class UpdateUserRequest extends Request
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
+            'password' => ['sometimes', 'string', Password::min(10)->letters()->numbers(), 'confirmed'],
         ];
     }
 }
